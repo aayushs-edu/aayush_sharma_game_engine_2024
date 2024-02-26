@@ -21,6 +21,8 @@ class Player(pg.sprite.Sprite):
         # Rectangular area of player
         self.rect = self.image.get_rect()
 
+        self.speed = 300
+
         self.vx, vy = 0, 0
         self.x = x * TILESIZE
         self.y = y * TILESIZE
@@ -63,8 +65,11 @@ class Player(pg.sprite.Sprite):
     def collide_with_group(self, group, kill):
         hits = pg.sprite.spritecollide(self, group, kill)
         if hits:
-            if str(hits[0].__class__.__name__) == "Coin":
+            if hits[0].__class__.__name__ == "Coin":
                 self.moneybag += 1
+            if hits[0].__class__.__name__ == 'PowerUp':
+                print('POWERUP')
+                self.speed += 25
 
     def update(self):
         self.get_keys()
@@ -77,18 +82,19 @@ class Player(pg.sprite.Sprite):
         # Add collision later
         self.collide_with_walls('y')
         self.collide_with_group(self.game.coins, True)
+        self.collide_with_group(self.game.powerups, True)
 
     def get_keys(self):
         self.vx, self.vy = 0, 0
         keys = pg.key.get_pressed()
         if keys[pg.K_LEFT] or keys[pg.K_a]:
-            self.vx = -PLAYER_SPEED
+            self.vx = -self.speed
         if keys[pg.K_RIGHT] or keys[pg.K_d]:
-            self.vx = PLAYER_SPEED
+            self.vx = self.speed
         if keys[pg.K_UP] or keys[pg.K_w]:
-            self.vy = -PLAYER_SPEED
+            self.vy = -self.speed
         if keys[pg.K_DOWN] or keys[pg.K_s]:
-            self.vy = PLAYER_SPEED
+            self.vy = self.speed
         if self.vx != 0 and self.vy != 0:
             self.vx *= 0.7071
             self.vy *= 0.7071
