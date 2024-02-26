@@ -25,6 +25,8 @@ class Player(pg.sprite.Sprite):
         self.x = x * TILESIZE
         self.y = y * TILESIZE
 
+        self.moneybag = 0
+
     # Function to move player
     # def move(self, dx=0, dy=0):
     #     if not self.colliding(dx, dy):
@@ -56,6 +58,13 @@ class Player(pg.sprite.Sprite):
                     self.y = hits[0].rect.bottom
                 self.vy = 0
                 self.rect.y = self.y
+    
+    # Method to collide with any group
+    def collide_with_group(self, group, kill):
+        hits = pg.sprite.spritecollide(self, group, kill)
+        if hits:
+            if str(hits[0].__class__.__name__) == "Coin":
+                self.moneybag += 1
 
     def update(self):
         self.get_keys()
@@ -67,6 +76,7 @@ class Player(pg.sprite.Sprite):
         self.rect.y = self.y
         # Add collision later
         self.collide_with_walls('y')
+        self.collide_with_group(self.game.coins, True)
 
     def get_keys(self):
         self.vx, self.vy = 0, 0
@@ -95,6 +105,43 @@ class Wall(pg.sprite.Sprite):
         self.image = pg.Surface((TILESIZE, TILESIZE))
         # Give color
         self.image.fill(BROWN)
+        # Rectangular area of wall
+        self.rect = self.image.get_rect()
+        self.x = x
+        self.y = y
+        self.rect.x = x * TILESIZE
+        self.rect.y = y * TILESIZE
+
+# Coin Sprites
+class Coin(pg.sprite.Sprite):
+    def __init__(self, game, x, y):
+        self.groups = game.all_sprites, game.coins
+        # init superclass
+        pg.sprite.Sprite.__init__(self, self.groups)
+        # set game class
+        self.game = game
+        # Set dimensions 
+        self.image = pg.Surface((TILESIZE, TILESIZE))
+        # Give color
+        self.image.fill(YELLOW)
+        # Rectangular area of wall
+        self.rect = self.image.get_rect()
+        self.x = x
+        self.y = y
+        self.rect.x = x * TILESIZE
+        self.rect.y = y * TILESIZE
+
+class PowerUp(pg.sprite.Sprite):
+    def __init__(self, game, x, y):
+        self.groups = game.all_sprites, game.powerups
+        # init superclass
+        pg.sprite.Sprite.__init__(self, self.groups)
+        # set game class
+        self.game = game
+        # Set dimensions 
+        self.image = pg.Surface((TILESIZE, TILESIZE))
+        # Give color
+        self.image.fill(BLUE)
         # Rectangular area of wall
         self.rect = self.image.get_rect()
         self.x = x
