@@ -61,6 +61,8 @@ class Game:
                     self.player1 = Player(self, col, row)
                 if tile == 'C':
                     Coin(self, col, row)
+                if tile == 'U':
+                    PowerUp(self, col, row)
 
     def draw(self):
         self.screen.fill(BGCOLOR)
