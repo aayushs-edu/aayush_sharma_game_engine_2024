@@ -22,6 +22,7 @@ class Player(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
 
         self.speed = 300
+        self.hitpoints = 100
 
         self.vx, vy = 0, 0
         self.x = x * TILESIZE
