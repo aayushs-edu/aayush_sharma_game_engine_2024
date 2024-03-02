@@ -1,8 +1,9 @@
 # This file was created by: Aayush Sharma
 '''
-enemies that follow player(could have shooting capability)
-projectiles(guns/bullets)
-lootbox -> powerups/coins
+enemies that follow player(could have shooting capability) - goal: kill enemy, rule: don't die to it
+projectiles(guns/bullets) - verb, freedom, goal: shoot enemy
+lootbox -> powerups/coins - verb: open lootbox, freedom, goal: get items
+The player shoots an enemy and it dies and drops its weapon.
 '''
 
 # Import modules

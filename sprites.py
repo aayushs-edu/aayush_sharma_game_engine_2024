@@ -4,6 +4,7 @@
 # Import libraries/settings
 import pygame as pg
 from settings import *
+import math
 
 # Player Sprite -- inherits from pygame Sprite class
 class Player(pg.sprite.Sprite):
@@ -88,6 +89,9 @@ class Player(pg.sprite.Sprite):
     def get_keys(self):
         self.vx, self.vy = 0, 0
         keys = pg.key.get_pressed()
+        if keys[pg.K_SPACE]:
+            self.shoot_bullet()
+
         if keys[pg.K_LEFT] or keys[pg.K_a]:
             self.vx = -self.speed
         if keys[pg.K_RIGHT] or keys[pg.K_d]:
@@ -99,6 +103,14 @@ class Player(pg.sprite.Sprite):
         if self.vx != 0 and self.vy != 0:
             self.vx *= 0.7071
             self.vy *= 0.7071
+
+    def shoot_bullet(self):
+        bullet = Bullet(self.game, self.rect.x+5, self.rect.y)
+        #deg = -math.atan2(pg.mouse.get_pos()[1]-self.y, pg.mouse.get_pos()[0]-self.x) * 180/math.pi
+        #bullet.image = pg.transform.rotate(bullet.image, deg)
+        #print(deg)
+        print('Working')
+
 
 # Walls Sprites
 class Wall(pg.sprite.Sprite):
@@ -155,3 +167,32 @@ class PowerUp(pg.sprite.Sprite):
         self.y = y
         self.rect.x = x * TILESIZE
         self.rect.y = y * TILESIZE
+
+# Bullet Sprites
+class Bullet(pg.sprite.Sprite):
+    def __init__(self, game, x, y):
+        self.groups = game.all_sprites
+        # init superclass
+        pg.sprite.Sprite.__init__(self, self.groups)
+        # set game class
+        self.game = game
+        # Set dimensions 
+        self.image = pg.Surface((10, 10))
+        # Give color
+        self.image.fill(YELLOW)
+        # Rectangular area of wall
+        self.rect = self.image.get_rect()
+        self.x = x
+        self.y = y
+        self.rect.x = x
+        self.rect.y = y
+
+        self.speed = 5
+    
+    def update(self):
+        self.x += self.speed * self.game.dt
+        self.rect.x = self.x
+
+
+    
+    
