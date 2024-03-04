@@ -58,6 +58,7 @@ class Game:
         self.powerups = pg.sprite.Group()
         self.guns = pg.sprite.Group()
         self.bullets = pg.sprite.Group()
+        self.particles = pg.sprite.Group()
         for row, tiles in enumerate(self.map_data):
             print(row)
             for col, tile in enumerate(tiles):
@@ -71,6 +72,8 @@ class Game:
                     Coin(self, col, row)
                 if tile == 'U':
                     PowerUp(self, col, row)
+                if tile == 'M':
+                    Mob(self, self.player1, col, row)
 
     def draw(self):
         self.screen.fill(BGCOLOR)
@@ -101,10 +104,10 @@ class Game:
     def draw_grid(self):
         # Vertical lines
         for x in range(0, WIDTH, TILESIZE):
-            pg.draw.line(self.screen, LIGHTGREY, (x, 0), (x, HEIGHT))
+            pg.draw.line(self.screen, LIGHTGRAY, (x, 0), (x, HEIGHT))
         # Horizontal lines
         for y in range(0, WIDTH, TILESIZE):
-            pg.draw.line(self.screen, LIGHTGREY, (0, y), (WIDTH, y))    
+            pg.draw.line(self.screen, LIGHTGRAY, (0, y), (WIDTH, y))    
 
     def draw_text(self, surface, text, size, color, x, y):
         font_name = pg.font.match_font('arial')

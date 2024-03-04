@@ -6,6 +6,7 @@ import pygame as pg
 from settings import *
 import math
 from pygame import Vector2
+import random as rand
 
 # Rotate function to be used for guns
 def rotate_img_on_pivot(img, angle, pivot, origin):
@@ -45,7 +46,7 @@ class Player(pg.sprite.Sprite):
         self.y = y * TILESIZE
 
         self.moneybag = 0
-        self.loadout : list[Gun] = [Gun(self.game, self)]
+        self.loadout : list[Gun] = [Gun(self.game, self.rect, 'Mouse', PLAYER_COOLDOWN)]
 
     # Function to move player
     # def move(self, dx=0, dy=0):
@@ -134,7 +135,7 @@ class Wall(pg.sprite.Sprite):
         # Set dimensions 
         self.image = pg.Surface((TILESIZE, TILESIZE))
         # Give color
-        self.image.fill(BROWN)
+        self.image.fill(GRAY)
         # Rectangular area of wall
         self.rect = self.image.get_rect()
         self.x = x
@@ -178,12 +179,14 @@ class PowerUp(pg.sprite.Sprite):
         self.y = y
         self.rect.x = x * TILESIZE
         self.rect.y = y * TILESIZE
+        
 
 class Gun(pg.sprite.Sprite):
-    def __init__(self, game, player):
+    def __init__(self, game, holder, target, cooldown):
         self.groups = game.all_sprites, game.guns
         self.game = game
-        self.player = player
+        self.holder = holder
+        self.target = target
         # init superclass
         pg.sprite.Sprite.__init__(self, self.groups)
         # Set dimensions 
@@ -191,51 +194,56 @@ class Gun(pg.sprite.Sprite):
         self.image_orig = pg.transform.scale(pg.image.load('./assets/pistol.png').convert_alpha(), (35, 25))
         self.image = self.image_orig
 
-        self.pivot = Vector2(self.player.rect.center)
+        self.pivot = Vector2(self.holder.center)
         self.pos = self.pivot + (10, 0)
         self.rect = self.image.get_rect(center=self.pos)
 
         self.flipped_img = pg.transform.flip(self.image_orig, False, True)
         self.unflipped_img = self.image_orig
 
+        self.shooting_point = Vector2(0, 0)
+
         # Shooting
-        self.cooldown = 0
+        self.cooldown = cooldown
+        self.cool_dur = 0
+
+        self.enabled = True
 
     def update(self):
-        # x, y = pg.mouse.get_pos()
-        # self.angle = math.degrees(math.atan2(self.y-y, x-self.x))
-        # Stick to player
-        self.pivot = Vector2(self.player.rect.center)
-        self.pos = self.pivot + (10, 0)
+        if self.enabled:
+            # Stick to player
+            self.pivot = Vector2(self.holder.center)
+            self.pos = self.pivot + (10, 0)
 
-        self.rotate()
+            if self.target == 'Mouse': self.rotate(Vector2(pg.mouse.get_pos()))
+            else: self.rotate(self.target.center)
 
-        # Cooldown
-        if self.cooldown > 0:
-            self.cooldown -= 2 * self.game.dt
+            # Cooldown
+            if self.cool_dur > 0:
+                self.cool_dur -= 2 * self.game.dt
 
-    def rotate(self):
-        mousePos = Vector2(pg.mouse.get_pos())
-        mouse_offset = mousePos - self.pivot
-        angle = -math.degrees(math.atan2(mouse_offset.y, mouse_offset.x))
+    def rotate(self, target):
+        offset = Vector2(target) - self.pivot
+        angle = -math.degrees(math.atan2(offset.y, offset.x))
 
-        if mousePos.x < self.pivot.x:
+        if target[0] < self.pivot.x:
             self.image_orig = self.flipped_img
         else: 
             self.image_orig = self.unflipped_img
         self.shooting_point = self.pivot + (0, -12) + Vector2(self.rect.width*0.9, 0).rotate(-(angle+15))
         self.image, self.rect = rotate_img_on_pivot(self.image_orig, angle, Vector2(self.pivot), Vector2(self.pos[0], self.pos[1]-5))
         
-
-
     def shoot(self):
-        if self.cooldown <= 0:
-            mousePos = Vector2(pg.mouse.get_pos())
-            mouse_offset = mousePos - self.shooting_point
-            angle = -math.degrees(math.atan2(mouse_offset.y, mouse_offset.x))
+        if self.cool_dur <= 0:
+            if self.target == 'Mouse': 
+                target = Vector2(pg.mouse.get_pos())
+            else: target = self.target.center
+
+            offset = target - self.shooting_point
+            angle = -math.degrees(math.atan2(offset.y, offset.x))
             Bullet(self.game, *self.shooting_point, angle)
 
-            self.cooldown = 1
+            self.cool_dur = self.cooldown
 
 # Bullet Sprites
 class Bullet(pg.sprite.Sprite):
@@ -264,6 +272,98 @@ class Bullet(pg.sprite.Sprite):
         self.rect.x = int(self.x)
         self.rect.y = int(self.y)
 
+        self.collide()
 
+    def collide(self):
+        hits = pg.sprite.spritecollide(self, self.game.all_sprites, False)
+        if hits:
+            if hits[0].__class__.__name__ == "Mob":
+                hits[0].kill()
+                hits[0].weapon.enabled = False
+            elif hits[0].__class__.__name__ == 'Wall':
+                self.kill()
+
+class Mob(pg.sprite.Sprite):
+    def __init__(self, game, target, x, y):
+        self.groups = game.all_sprites, game.mobs
+        # init superclass
+        pg.sprite.Sprite.__init__(self, self.groups)
+        # set game class
+        self.game = game
+        self.target = target
+        # Set dimensions 
+        self.image = pg.Surface((TILESIZE, TILESIZE))
+        # Give color
+        self.image.fill(RED)
+        # Rectangular area of wall
+        self.rect = self.image.get_rect()
+        self.vx, vy = 0, 0
+        self.x = x * TILESIZE
+        self.y = y * TILESIZE
+
+        self.speed = 20
+
+        self.weapon = Gun(self.game, self.rect, self.target.rect, MOB_COOLDOWN)
+
+    def update(self):
+        self.vx, self.vy = (Vector2(self.target.rect.center) - Vector2(self.x, self.y)) / TILESIZE * self.speed
+        
+        self.x += self.vx * self.game.dt
+        self.y += self.vy * self.game.dt
+        self.rect.x = self.x
+        self.collide_with_walls('x')
+        self.rect.y = self.y
+        self.collide_with_walls('y')
+
+        self.weapon.shoot()
+
+    def collide_with_walls(self, dir):
+        if dir == 'x':
+            hits = pg.sprite.spritecollide(self, self.game.walls, False)
+            if hits:
+                if self.vx > 0:
+                    self.x = hits[0].rect.left - self.rect.width
+                if self.vx < 0:
+                    self.x = hits[0].rect.right
+                self.vx = 0
+                self.rect.x = self.x
+        if dir == 'y':
+            hits = pg.sprite.spritecollide(self, self.game.walls, False)
+            if hits:
+                if self.vy > 0:
+                    self.y = hits[0].rect.top - self.rect.height
+                if self.vy < 0:
+                    self.y = hits[0].rect.bottom
+                self.vy = 0
+                self.rect.y = self.y
     
-    
+class ParticleSplash:
+    def __init__(self, screen, x, y, duration):
+        self.screen = screen
+        self.x = x
+        self.y = y
+        self.duration = duration
+        self.particles = []
+
+    def emit(self):
+        if self.particles:
+            self.delete_particles()
+            for particle in self.particles:
+                particle[0][1] += particle[2][0]
+                particle[0][0] += particle[2][1]
+                particle[1] -= 0.2
+                pg.draw.circle(self.screen,pg.Color('White'),particle[0], int(particle[1]))
+                print('added particle')
+
+    def add_particles(self):
+        radius = 100
+        direction_x = rand.randint(-3,3)
+        direction_y = rand.randint(-3,3)
+        particle_circle = [[self.x,self.y],radius,[direction_x,direction_y]]
+        self.particles.append(particle_circle)
+
+    def delete_particles(self):
+        particle_copy = [particle for particle in self.particles if particle[1] > 0]
+        self.particles = particle_copy
+
+        
