@@ -46,7 +46,7 @@ class Player(pg.sprite.Sprite):
         self.y = y * TILESIZE
 
         self.moneybag = 0
-        self.loadout : list[Gun] = [Gun(self.game, self.rect, 'Mouse', PLAYER_COOLDOWN)]
+        self.loadout : list[Gun] = [Gun(self.game, self, 'Mouse', PLAYER_COOLDOWN)]
 
     # Function to move player
     # def move(self, dx=0, dy=0):
@@ -102,6 +102,9 @@ class Player(pg.sprite.Sprite):
         self.collide_with_walls('y')
         self.collide_with_group(self.game.coins, True)
         self.collide_with_group(self.game.powerups, True)
+        if self.hitpoints < 0:
+            pg.quit()
+            print('dead')
 
     def get_keys(self):
         self.vx, self.vy = 0, 0
@@ -194,7 +197,7 @@ class Gun(pg.sprite.Sprite):
         self.image_orig = pg.transform.scale(pg.image.load('./assets/pistol.png').convert_alpha(), (35, 25))
         self.image = self.image_orig
 
-        self.pivot = Vector2(self.holder.center)
+        self.pivot = Vector2(self.holder.rect.center)
         self.pos = self.pivot + (10, 0)
         self.rect = self.image.get_rect(center=self.pos)
 
@@ -212,7 +215,7 @@ class Gun(pg.sprite.Sprite):
     def update(self):
         if self.enabled:
             # Stick to player
-            self.pivot = Vector2(self.holder.center)
+            self.pivot = Vector2(self.holder.rect.center)
             self.pos = self.pivot + (10, 0)
 
             if self.target == 'Mouse': self.rotate(Vector2(pg.mouse.get_pos()))
@@ -241,13 +244,13 @@ class Gun(pg.sprite.Sprite):
 
             offset = target - self.shooting_point
             angle = -math.degrees(math.atan2(offset.y, offset.x))
-            Bullet(self.game, *self.shooting_point, angle)
+            Bullet(self.game, *self.shooting_point, angle, self.holder)
 
             self.cool_dur = self.cooldown
 
 # Bullet Sprites
 class Bullet(pg.sprite.Sprite):
-    def __init__(self, game, x, y, angle):
+    def __init__(self, game, x, y, angle, shooter):
         self.groups = game.all_sprites, game.bullets
         # init superclass
         pg.sprite.Sprite.__init__(self, self.groups)
@@ -258,6 +261,8 @@ class Bullet(pg.sprite.Sprite):
         self.rect = self.image.get_rect(topleft=(x, y))
         self.x = x
         self.y = y
+
+        self.shooter = shooter
 
         self.angle = angle
         self.speed = 20
@@ -277,9 +282,14 @@ class Bullet(pg.sprite.Sprite):
     def collide(self):
         hits = pg.sprite.spritecollide(self, self.game.all_sprites, False)
         if hits:
-            if hits[0].__class__.__name__ == "Mob":
+            if hits[0].__class__.__name__ == "Mob" and not self.shooter.__class__.__name__ == "Mob":
                 hits[0].kill()
                 hits[0].weapon.enabled = False
+                self.kill()
+            elif hits[0].__class__.__name__ == "Player" and self.shooter.__class__.__name__ == "Mob":
+                hits[0].hitpoints -= 20
+                print(hits[0].hitpoints)
+                self.kill()
             elif hits[0].__class__.__name__ == 'Wall':
                 self.kill()
 
@@ -301,9 +311,9 @@ class Mob(pg.sprite.Sprite):
         self.x = x * TILESIZE
         self.y = y * TILESIZE
 
-        self.speed = 20
+        self.speed = 5
 
-        self.weapon = Gun(self.game, self.rect, self.target.rect, MOB_COOLDOWN)
+        self.weapon = Gun(self.game, self, self.target.rect, MOB_COOLDOWN)
 
     def update(self):
         self.vx, self.vy = (Vector2(self.target.rect.center) - Vector2(self.x, self.y)) / TILESIZE * self.speed
@@ -337,33 +347,33 @@ class Mob(pg.sprite.Sprite):
                 self.vy = 0
                 self.rect.y = self.y
     
-class ParticleSplash:
-    def __init__(self, screen, x, y, duration):
-        self.screen = screen
-        self.x = x
-        self.y = y
-        self.duration = duration
-        self.particles = []
+# class ParticleSplash:
+#     def __init__(self, screen, x, y, duration):
+#         self.screen = screen
+#         self.x = x
+#         self.y = y
+#         self.duration = duration
+#         self.particles = []
 
-    def emit(self):
-        if self.particles:
-            self.delete_particles()
-            for particle in self.particles:
-                particle[0][1] += particle[2][0]
-                particle[0][0] += particle[2][1]
-                particle[1] -= 0.2
-                pg.draw.circle(self.screen,pg.Color('White'),particle[0], int(particle[1]))
-                print('added particle')
+#     def emit(self):
+#         if self.particles:
+#             self.delete_particles()
+#             for particle in self.particles:
+#                 particle[0][1] += particle[2][0]
+#                 particle[0][0] += particle[2][1]
+#                 particle[1] -= 0.2
+#                 pg.draw.circle(self.screen,pg.Color('White'),particle[0], int(particle[1]))
+#                 print('added particle')
 
-    def add_particles(self):
-        radius = 100
-        direction_x = rand.randint(-3,3)
-        direction_y = rand.randint(-3,3)
-        particle_circle = [[self.x,self.y],radius,[direction_x,direction_y]]
-        self.particles.append(particle_circle)
+#     def add_particles(self):
+#         radius = 100
+#         direction_x = rand.randint(-3,3)
+#         direction_y = rand.randint(-3,3)
+#         particle_circle = [[self.x,self.y],radius,[direction_x,direction_y]]
+#         self.particles.append(particle_circle)
 
-    def delete_particles(self):
-        particle_copy = [particle for particle in self.particles if particle[1] > 0]
-        self.particles = particle_copy
+#     def delete_particles(self):
+#         particle_copy = [particle for particle in self.particles if particle[1] > 0]
+#         self.particles = particle_copy
 
         
