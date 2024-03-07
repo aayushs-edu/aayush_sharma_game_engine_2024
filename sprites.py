@@ -81,14 +81,16 @@ class Player(pg.sprite.Sprite):
                 self.rect.y = self.y
     
     # Method to collide with any group
-    def collide_with_group(self, group, kill):
-        hits = pg.sprite.spritecollide(self, group, kill)
+    def collide_with_group(self, group):
+        hits = pg.sprite.spritecollide(self, group, False)
         if hits:
-            if hits[0].__class__.__name__ == "Coin":
+            if hits[0].__class__.__name__ == "Coin" and hits[0].collectable:
                 self.moneybag += 1
-            if hits[0].__class__.__name__ == 'PowerUp':
+                hits[0].kill()
+            if hits[0].__class__.__name__ == 'PowerUp' and hits[0].collectable:
                 print('POWERUP')
                 self.speed += 50
+                hits[0].kill()
 
     def update(self):
         self.get_keys()
@@ -100,10 +102,10 @@ class Player(pg.sprite.Sprite):
         self.rect.y = self.y
         # Add collision later
         self.collide_with_walls('y')
-        self.collide_with_group(self.game.coins, True)
-        self.collide_with_group(self.game.powerups, True)
-        if self.hitpoints < 0:
-            pg.quit()
+        self.collide_with_group(self.game.coins)
+        self.collide_with_group(self.game.powerups)
+        if self.hitpoints <= 0:
+            self.game.playing = False
             print('dead')
 
     def get_keys(self):
@@ -140,15 +142,13 @@ class Wall(pg.sprite.Sprite):
         # Give color
         self.image.fill(GRAY)
         # Rectangular area of wall
-        self.rect = self.image.get_rect()
+        self.rect = self.image.get_rect(center=(x*TILESIZE, y*TILESIZE))
         self.x = x
         self.y = y
-        self.rect.x = x * TILESIZE
-        self.rect.y = y * TILESIZE
 
 # Coin Sprites
 class Coin(pg.sprite.Sprite):
-    def __init__(self, game, x, y):
+    def __init__(self, game, x, y, delay):
         self.groups = game.all_sprites, game.coins
         # init superclass
         pg.sprite.Sprite.__init__(self, self.groups)
@@ -159,14 +159,22 @@ class Coin(pg.sprite.Sprite):
         # Give color
         self.image.fill(YELLOW)
         # Rectangular area of wall
-        self.rect = self.image.get_rect()
-        self.x = x
-        self.y = y
-        self.rect.x = x * TILESIZE
-        self.rect.y = y * TILESIZE
+        self.x = x * TILESIZE
+        self.y = y * TILESIZE
+        self.rect = self.image.get_rect(topleft=(self.x, self.y))
 
+        self.delay = delay
+        self.collectable = False
+    
+    def update(self):
+        if (self.rect.x, self.rect.y) != (self.x, self.y):
+                self.rect.x += (self.x - self.rect.x) * 0.2
+                self.rect.y += (self.y - self.rect.y) * 0.2
+        self.delay = max(0, self.delay - self.game.dt)
+        if self.delay <= 0:
+            self.collectable = True
 class PowerUp(pg.sprite.Sprite):
-    def __init__(self, game, x, y):
+    def __init__(self, game, x, y, delay):
         self.groups = game.all_sprites, game.powerups
         # init superclass
         pg.sprite.Sprite.__init__(self, self.groups)
@@ -177,11 +185,20 @@ class PowerUp(pg.sprite.Sprite):
         # Give color
         self.image.fill(BLUE)
         # Rectangular area of wall
-        self.rect = self.image.get_rect()
-        self.x = x
-        self.y = y
-        self.rect.x = x * TILESIZE
-        self.rect.y = y * TILESIZE
+        self.x = x * TILESIZE
+        self.y = y * TILESIZE
+        self.rect = self.image.get_rect(topleft=(self.x, self.y))
+
+        self.delay = delay
+        self.collectable = False
+    
+    def update(self):
+        if (self.rect.x, self.rect.y) != (self.x, self.y):
+                self.rect.x += (self.x - self.rect.x) * 0.2
+                self.rect.y += (self.y - self.rect.y) * 0.2
+        self.delay = max(0, self.delay - self.game.dt)
+        if self.delay <= 0:
+            self.collectable = True
         
 
 class Gun(pg.sprite.Sprite):
@@ -392,13 +409,46 @@ class Lootbox(pg.sprite.Sprite):
         self.y = y
         self.rect.x = x * TILESIZE - self.image.get_width()/2
         self.rect.y = y * TILESIZE - self.image.get_height()/2
+        self.alpha = 255
+        self.fading = False
 
+        self.items = ['Coin', 'PowerUp']
+
+    # Input parameter is whether the user is pressing E or not (True or False)
     def checkNearby(self):
         hits = pg.sprite.spritecollide(self, self.game.player, False)
         if hits:
-            print('IN PROXIMITY')
+            keys = pg.key.get_pressed()
+            if keys[pg.K_e]:
+                self.image = pg.transform.scale(pg.image.load('./assets/chest/chest11.png'), (TILESIZE*2.5, TILESIZE*2.5))
+                self.open()
+                self.fading = True
+            
+
+    def fade(self):
+        self.alpha = max(0, self.alpha-2)  # alpha should never be < 0.
+        self.image = self.image.copy()
+        self.image.fill((255, 255, 255, self.alpha), special_flags=pg.BLEND_RGBA_MULT)
+        if self.alpha <= 0:  # Kill the sprite when the alpha is <= 0.
+            self.kill()  
+
+    def open(self):
+        items = rand.choices(self.items, k=2)
+        print(items)
+        for item in items:
+            vec = pg.Vector2(TILESIZE, TILESIZE).rotate(rand.random() * 360)
+            if item == 'Coin': 
+                coin = Coin(self.game, self.x, self.y, 1)      
+                coin.x += vec[0]
+                coin.y += vec[1]
+            elif item == 'PowerUp': 
+                powerup = PowerUp(self.game, self.x, self.y, 1)
+                powerup.x -= vec[0]
+                powerup.y -= vec[1]
+            
     
     def update(self):
-        self.checkNearby()
+        if self.fading: self.fade()
+        else: self.checkNearby()
 
         

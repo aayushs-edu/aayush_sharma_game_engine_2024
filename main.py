@@ -70,9 +70,9 @@ class Game:
                 if tile == 'P':
                     self.player1 = Player(self, col, row)
                 if tile == 'C':
-                    Coin(self, col, row)
+                    Coin(self, col, row, 0)
                 if tile == 'U':
-                    PowerUp(self, col, row)
+                    PowerUp(self, col, row, 0)
                 if tile == 'M':
                     Mob(self, self.player1, col, row)
                 if tile == 'L':
@@ -141,11 +141,28 @@ class Game:
             #         # Move up
             #         case pg.K_w | pg.K_UP:
             #             self.player1.move(dy=-1)
+                
+    def show_start_screen(self):
+        self.screen.fill(BGCOLOR)
+        self.draw_text(self.screen, 'Top Down Shooter', 24, WHITE, WIDTH/2 - 32, 2)
+        pg.display.flip()
+        self.wait_for_key()
+
+    def wait_for_key(self):
+        waiting = True
+        while waiting:
+            self.clock.tick(FPS)
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    waiting = False
+                    self.quit()
+                if event.type == pg.KEYUP:
+                    waiting = False
 
 # Create a new game
 g = Game()
 # Run the game
-# g.show_start_screen()
+g.show_start_screen()
 while True:
     g.new()
     g.run()
