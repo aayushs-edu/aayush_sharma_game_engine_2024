@@ -26,7 +26,7 @@ def rotate_point_on_pivot(angle, pivot, origin):
 class Player(pg.sprite.Sprite):
     # Init Player
     def __init__(self, game, x, y):
-        self.groups = game.all_sprites
+        self.groups = game.all_sprites, game.player
         # init superclass
         pg.sprite.Sprite.__init__(self, self.groups)
         # set game class
@@ -375,5 +375,30 @@ class Mob(pg.sprite.Sprite):
 #     def delete_particles(self):
 #         particle_copy = [particle for particle in self.particles if particle[1] > 0]
 #         self.particles = particle_copy
+                
+class Lootbox(pg.sprite.Sprite):
+    def __init__(self, game, x, y):
+        self.groups = game.all_sprites
+        # init superclass
+        pg.sprite.Sprite.__init__(self, self.groups)
+        # set game class
+        self.game = game
+        # Set dimensions 
+        self.image = pg.transform.scale(pg.image.load('./assets/chest/chest1.png'), (TILESIZE*2.5, TILESIZE*2.5))
+        # Give color
+        # Rectangular area of wall
+        self.rect = self.image.get_rect()
+        self.x = x
+        self.y = y
+        self.rect.x = x * TILESIZE - self.image.get_width()/2
+        self.rect.y = y * TILESIZE - self.image.get_height()/2
+
+    def checkNearby(self):
+        hits = pg.sprite.spritecollide(self, self.game.player, False)
+        if hits:
+            print('IN PROXIMITY')
+    
+    def update(self):
+        self.checkNearby()
 
         

@@ -59,6 +59,7 @@ class Game:
         self.guns = pg.sprite.Group()
         self.bullets = pg.sprite.Group()
         self.particles = pg.sprite.Group()
+        self.player = pg.sprite.Group()
         for row, tiles in enumerate(self.map_data):
             print(row)
             for col, tile in enumerate(tiles):
@@ -74,6 +75,8 @@ class Game:
                     PowerUp(self, col, row)
                 if tile == 'M':
                     Mob(self, self.player1, col, row)
+                if tile == 'L':
+                    Lootbox(self, col, row)
 
     def draw(self):
         self.screen.fill(BGCOLOR)
