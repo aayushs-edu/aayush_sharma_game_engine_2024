@@ -7,6 +7,7 @@ from settings import *
 import math
 from pygame import Vector2
 import random as rand
+import os
 
 # Rotate function to be used for guns
 def rotate_img_on_pivot(img, angle, pivot, origin):
@@ -48,6 +49,9 @@ class Player(pg.sprite.Sprite):
         self.moneybag = 0
         self.loadout : list[Gun] = [Gun(self.game, self, 'Mouse', PLAYER_COOLDOWN)]
 
+        self.powerups = []
+        self.powered_up = False
+
     # Function to move player
     # def move(self, dx=0, dy=0):
     #     if not self.colliding(dx, dy):
@@ -87,12 +91,27 @@ class Player(pg.sprite.Sprite):
             if hits[0].__class__.__name__ == "Coin" and hits[0].collectable:
                 self.moneybag += 1
                 hits[0].kill()
-            if hits[0].__class__.__name__ == 'PowerUp' and hits[0].collectable:
-                print('POWERUP')
-                self.speed += 50
-                hits[0].kill()
+            if hits[0].__class__.__name__ == 'Speed' and hits[0].collectable:
+                if not hits[0].enabled:
+                    print('POWERED UP')
+                    hits[0].enable()
+                    self.powerups.append(hits[0])
 
     def update(self):
+        # Handle powerups
+        if self.powerups:
+            self.powered_up = True
+            for p in self.powerups:
+                if p.dur <= 0:
+                    p.disable()
+                    self.powerups.remove(p)
+        else: self.powered_up = False
+
+        if self.powered_up:
+            self.image.fill(YELLOW)
+        else:
+            self.image.fill(GREEN)
+
         self.get_keys()
         self.x += self.vx * self.game.dt
         self.y += self.vy * self.game.dt
@@ -155,9 +174,10 @@ class Coin(pg.sprite.Sprite):
         # set game class
         self.game = game
         # Set dimensions 
-        self.image = pg.Surface((TILESIZE, TILESIZE))
-        # Give color
-        self.image.fill(YELLOW)
+        self.frame = 0
+        self.frameDelay = 0.2
+        self.coin_images = os.listdir('./assets/coin/')
+        self.image = pg.transform.scale(pg.image.load(f'./assets/coin/{self.coin_images[0]}'), (TILESIZE, TILESIZE))
         # Rectangular area of wall
         self.x = x * TILESIZE
         self.y = y * TILESIZE
@@ -167,39 +187,66 @@ class Coin(pg.sprite.Sprite):
         self.collectable = False
     
     def update(self):
+        if self.frameDelay <= 0:
+            self.frame = (self.frame + 1) % 5
+            self.image = pg.transform.scale(pg.image.load(f'./assets/coin/{self.coin_images[self.frame]}'), (TILESIZE, TILESIZE))
+            self.frameDelay = 0.2
         if (self.rect.x, self.rect.y) != (self.x, self.y):
                 self.rect.x += (self.x - self.rect.x) * 0.2
                 self.rect.y += (self.y - self.rect.y) * 0.2
         self.delay = max(0, self.delay - self.game.dt)
         if self.delay <= 0:
             self.collectable = True
+        self.frameDelay -= self.game.dt
+
 class PowerUp(pg.sprite.Sprite):
-    def __init__(self, game, x, y, delay):
+    def __init__(self, game, x, y, delay, dur, img):
         self.groups = game.all_sprites, game.powerups
         # init superclass
         pg.sprite.Sprite.__init__(self, self.groups)
         # set game class
         self.game = game
         # Set dimensions 
-        self.image = pg.Surface((TILESIZE, TILESIZE))
-        # Give color
-        self.image.fill(BLUE)
         # Rectangular area of wall
         self.x = x * TILESIZE
         self.y = y * TILESIZE
+        self.image = img
         self.rect = self.image.get_rect(topleft=(self.x, self.y))
 
         self.delay = delay
         self.collectable = False
+        self.dur = dur
+        self.enabled = False
     
     def update(self):
+        if self.enabled:
+            self.dur -= self.game.dt
         if (self.rect.x, self.rect.y) != (self.x, self.y):
                 self.rect.x += (self.x - self.rect.x) * 0.2
                 self.rect.y += (self.y - self.rect.y) * 0.2
         self.delay = max(0, self.delay - self.game.dt)
         if self.delay <= 0:
             self.collectable = True
+    
+    def enable(self):
+        self.enabled = True
+        self.effect()
+        self.image.fill((255, 255, 255, 0), special_flags=pg.BLEND_RGBA_MULT)
+
+class Speed(PowerUp):
+    def __init__(self, game, x, y, delay):
         
+        # Set dimensions 
+        self.image = pg.transform.scale(pg.image.load('./assets/lightning.png'), (TILESIZE, TILESIZE))
+        super().__init__(game, x, y, delay, 5, self.image)
+
+    def effect(self):
+        self.game.player1.speed += 100
+    
+    def disable(self):
+        print('done')
+        self.game.player1.speed -= 100
+        self.kill()
 
 class Gun(pg.sprite.Sprite):
     def __init__(self, game, holder, target, cooldown):
@@ -442,7 +489,7 @@ class Lootbox(pg.sprite.Sprite):
                 coin.x += vec[0]
                 coin.y += vec[1]
             elif item == 'PowerUp': 
-                powerup = PowerUp(self.game, self.x, self.y, 1)
+                powerup = Speed(self.game, self.x, self.y, 1)
                 powerup.x -= vec[0]
                 powerup.y -= vec[1]
             

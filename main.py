@@ -72,7 +72,7 @@ class Game:
                 if tile == 'C':
                     Coin(self, col, row, 0)
                 if tile == 'U':
-                    PowerUp(self, col, row, 0)
+                    Speed(self, col, row, 0)
                 if tile == 'M':
                     Mob(self, self.player1, col, row)
                 if tile == 'L':
