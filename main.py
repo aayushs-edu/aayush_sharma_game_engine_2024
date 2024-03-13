@@ -74,7 +74,8 @@ class Game:
                 if tile == 'U':
                     Speed(self, col, row, 0)
                 if tile == 'M':
-                    Mob(self, self.player1, col, row)
+                    # Mob(self, self.player1, col, row)
+                    pass
                 if tile == 'L':
                     Lootbox(self, col, row)
 
