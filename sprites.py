@@ -266,7 +266,7 @@ class Mob(pg.sprite.Sprite):
 
         self.speed = 5
 
-        self.weapon = Pistol(self.game, self, self.target.rect, MOB_COOLDOWN)
+        self.weapon = rand.choice([Pistol(self.game, self, self.target.rect, MOB_COOLDOWN), Shotgun(self.game, self, self.target.rect, MOB_COOLDOWN)])
         self.weapon.enabled = True
 
     def update(self):

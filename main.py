@@ -35,6 +35,12 @@ class Game:
         asset_folder = os.path.join(game_folder, 'assets')
         self.map_data = []
 
+        # Overlay images
+        self.bulletOverlay = pg.transform.rotozoom(pg.image.load('./assets/bulletOverlay.png'), -90, 0.04)
+        self.bulletTrans = self.bulletOverlay.copy()
+        self.bulletTrans.fill((0, 0, 0, 30), special_flags=pg.BLEND_RGBA_MULT)
+
+        # Sounds
         self.soundDir = os.path.join(asset_folder, 'sounds')
         self.gun_cock = pg.mixer.Sound(os.path.join(self.soundDir, 'gun-cock.ogg'))
         self.pistol_shot = pg.mixer.Sound(os.path.join(self.soundDir, 'pistol.ogg'))
@@ -98,6 +104,7 @@ class Game:
         self.all_sprites.draw(self.screen)
         self.draw_text(self.screen, "Coins " + str(self.player1.moneybag), 24, WHITE, WIDTH/2 - 32, 2)
         self.drawWeaponOverlay()
+        self.drawAmmoOverlay()
         self.drawHealthBar()
         pg.display.update()
         pg.display.flip()
@@ -108,6 +115,22 @@ class Game:
             img = weapon.img_overlay.copy()
             img_rect = img.get_rect(center=box.center)
             self.screen.blit(img, img_rect)
+
+    def drawAmmoOverlay(self):
+        weapon = self.player1.activeWeapon
+        if weapon.reloading:
+            pg.draw.rect(self.screen, LIGHTGRAY, pg.Rect(WIDTH-90, HEIGHT-25, 80, 10))
+            pg.draw.rect(self.screen, WHITE, pg.Rect(WIDTH-90, HEIGHT-25, weapon.reloadTimeLeft/weapon.reloadDur*80, 10))
+        else:
+            for i in range(weapon.magSize):
+                trans_img = self.bulletTrans.copy()       
+                curr_rect = trans_img.get_rect(center=(WIDTH-(self.bulletTrans.get_width()+5)*i - 10, HEIGHT-20))
+                self.screen.blit(trans_img, curr_rect)
+                if i < weapon.shotsLeft:
+                    img = self.bulletOverlay.copy()
+                    self.screen.blit(img, curr_rect)
+            
+            
     
     def drawHealthBar(self):
         pg.draw.rect(self.screen, SOFTGRAY, pg.Rect(30, 30, 100, 20))

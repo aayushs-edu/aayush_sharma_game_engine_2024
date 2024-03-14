@@ -20,7 +20,7 @@ def rotate_point_on_pivot(angle, pivot, origin):
     return new_pt
 
 class Gun(pg.sprite.Sprite):
-    def __init__(self, game, holder, target, cooldown, img, sound):
+    def __init__(self, game, holder, target, cooldown, img, sound, magSize, reloadDur, recoil):
         self.groups = game.all_sprites, game.guns
         self.game = game
         self.holder = holder
@@ -44,6 +44,11 @@ class Gun(pg.sprite.Sprite):
         # Shooting
         self.cooldown = cooldown
         self.cool_dur = 0
+        self.magSize = magSize
+        self.shotsLeft = magSize
+        self.reloading = False
+        self.reloadDur = reloadDur
+        self.reloadTimeLeft = self.reloadDur
 
         self.enabled = False
         self.dead = False
@@ -51,11 +56,21 @@ class Gun(pg.sprite.Sprite):
 
         self.flipped = False
         self.angle = 0
+        self.recoiling = False
+        self.recoil = recoil
+        self.recoil_time = max(recoil/200, self.cooldown)
+        self.recoil_timer = self.recoil_time
 
         self.sound = sound
         pg.mixer.Sound.play(self.game.gun_cock)
 
     def update(self):
+        if self.recoiling:
+            self.recoil_timer -= self.game.dt
+            if self.recoil_timer <= 0:
+                print('STOP')
+                self.recoiling = False
+                self.recoil_timer = self.recoil_time
         if self.dead:
             if self.disabledLifetime <= 0:
                 self.fade()
@@ -70,18 +85,31 @@ class Gun(pg.sprite.Sprite):
                 # Stick to player
                 self.pivot = Vector2(self.holder.rect.center)
                 self.pos = self.pivot + (20, 0)
-
+                
                 if self.target == 'Mouse': self.rotate(Vector2(pg.mouse.get_pos()))
                 else: self.rotate(self.target.center)
 
                 # Cooldown
                 if self.cool_dur > 0:
                     self.cool_dur -= 2 * self.game.dt
-            
+                if self.reloading:
+                    print('Reloading')
+                    if self.reloadTimeLeft <= 0:
+                        print('Finished Reloading')
+                        self.shotsLeft = self.magSize
+                        self.reloading = False
+                        self.reloadTimeLeft = self.reloadDur
+                    else: self.reloadTimeLeft -= self.game.dt
+
 
     def rotate(self, target):
         offset = Vector2(target) - self.pivot
-        self.angle = -math.degrees(math.atan2(offset.y, offset.x))
+        angle = -math.degrees(math.atan2(offset.y, offset.x))
+        if self.recoiling:
+            print('Recoiling')
+            self.angle += (angle - self.angle) / 5
+        else:
+            self.angle = angle
 
         if target[0] < self.pivot.x and not self.flipped:
             self.flipped = True
@@ -89,15 +117,16 @@ class Gun(pg.sprite.Sprite):
         elif target[0] > self.pivot.x and self.flipped: 
             self.flipped = False
             self.image_orig = pg.transform.flip(self.image_orig, False, True)
+
         self.shooting_point = rotate_point_on_pivot(self.angle, Vector2(self.pivot), self.pivot + (max(self.image.get_width(), self.image.get_height()), -5 * (-1 if self.flipped else 1)))
-        pg.draw.line(self.game.screen, (255, 0, 0), (self.pivot.x, self.pivot.y), (self.shooting_point.x, self.shooting_point.y))
-        pg.display.flip()
+        # pg.draw.line(self.game.screen, (255, 0, 0), (self.pivot.x, self.pivot.y), (self.shooting_point.x, self.shooting_point.y))
+        # pg.display.flip()
         self.image, self.rect = rotate_img_on_pivot(self.image_orig, self.angle, Vector2(self.pivot), Vector2(self.pos))
         
     def shoot(self, color):
-        if self.cool_dur <= 0:
+        if self.cool_dur <= 0 and not self.reloading:
             Bullet(self.game, *self.shooting_point, self.angle, self.holder, color)
-
+            
             # recoil (TODO)
             
             pDir = -1 if self.flipped else 1
@@ -106,6 +135,14 @@ class Gun(pg.sprite.Sprite):
 
             self.cool_dur = self.cooldown
             pg.mixer.Sound.play(self.sound)
+
+            self.shotsLeft -= 1
+            if self.shotsLeft <= 0:
+                self.reloading = True
+
+            self.recoiling = True
+
+            self.angle += (-self.recoil if self.flipped else self.recoil)
     
     def fade(self):
         self.alpha = max(0, self.alpha-2)  # alpha should never be < 0.
@@ -118,19 +155,22 @@ class Pistol(Gun):
     def __init__(self, game, holder, target, cooldown):
         self.image = pg.transform.scale(pg.image.load('./assets/pistol.png').convert_alpha(), (35, 25))
         sound = game.pistol_shot
-        super().__init__(game, holder, target, cooldown, self.image, sound)
+        super().__init__(game, holder, target, cooldown, self.image, sound, magSize=6, reloadDur=1.5, recoil=60)
 
 class Shotgun(Gun):
     def __init__(self, game, holder, target, cooldown):
         self.image = pg.transform.scale(pg.image.load('./assets/shotgun.png').convert_alpha(), (44, 16))
         sound = game.shotgun_shot
-        super().__init__(game, holder, target, cooldown, self.image, sound)
+        super().__init__(game, holder, target, cooldown, self.image, sound, magSize=3, reloadDur=3, recoil=60)
     
     def shoot(self, color):
-        if self.cool_dur <= 0:
+        if self.cool_dur <= 0 and not self.reloading:
             for angle in np.random.normal(loc=self.angle, scale=10.0, size=5):
                 Bullet(self.game, *self.shooting_point, angle, self.holder, color) 
 
+            self.shotsLeft -= 1
+            if self.shotsLeft <= 0:
+                self.reloading = True
             pDir = -1 if self.flipped else 1
             for _ in range(5):
                 Particle(self.game, *self.shooting_point, 15, 100*pDir, 40, 5, color)
@@ -138,6 +178,10 @@ class Shotgun(Gun):
             self.cool_dur = self.cooldown
 
             pg.mixer.Sound.play(self.sound)
+            
+            self.recoiling = True
+
+            self.angle += (-self.recoil if self.flipped else self.recoil)
 
 
 # Bullet Sprites
