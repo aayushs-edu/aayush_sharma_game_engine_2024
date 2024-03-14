@@ -11,8 +11,10 @@ import pygame as pg
 from settings import *
 from random import randint
 from sprites import *
+from camera import *
 import sys
-from os import path
+import os
+
 
 # Creating the game class
 class Game:
@@ -20,6 +22,7 @@ class Game:
     def __init__(self):
         # Initializes pygame
         pg.init()
+        pg.mixer.init()
         # Settings -- set canvas width, height, and title
         self.screen = pg.display.set_mode((WIDTH, HEIGHT)) 
         pg.display.set_caption(TITLE)
@@ -28,8 +31,15 @@ class Game:
         self.load_data()
 
     def load_data(self):
-        game_folder = path.dirname(__file__)
+        game_folder = os.path.dirname(__file__)
+        asset_folder = os.path.join(game_folder, 'assets')
         self.map_data = []
+
+        self.soundDir = os.path.join(asset_folder, 'sounds')
+        self.gun_cock = pg.mixer.Sound(os.path.join(self.soundDir, 'gun-cock.ogg'))
+        self.pistol_shot = pg.mixer.Sound(os.path.join(self.soundDir, 'pistol.ogg'))
+        self.shotgun_shot = pg.mixer.Sound(os.path.join(self.soundDir, 'shotgun.ogg'))
+        self.music = pg.mixer.music.load(os.path.join(self.soundDir, 'music1.ogg'))
         # 'r'     open for reading (default)
         # 'w'     open for writing, truncating the file first
         # 'x'     open for exclusive creation, failing if the file already exists
@@ -45,12 +55,13 @@ class Game:
         It is used to ensure that a resource is properly closed or released 
         after it is used. This can help to prevent errors and leaks.
         '''
-        with open(path.join(game_folder, 'map.txt'), 'rt') as f:
+        with open(os.path.join(game_folder, 'map.txt'), 'rt') as f:
             for line in f:
                 print(line)
                 self.map_data.append(line)
     
     def new(self):
+        pg.mixer.music.play(-1)
         self.all_sprites = pg.sprite.Group()
         self.walls = pg.sprite.Group()
         self.coins = pg.sprite.Group()
@@ -60,6 +71,7 @@ class Game:
         self.bullets = pg.sprite.Group()
         self.particles = pg.sprite.Group()
         self.player = pg.sprite.Group()
+        self.cameras = pg.sprite.Group()
         for row, tiles in enumerate(self.map_data):
             print(row)
             for col, tile in enumerate(tiles):
@@ -78,14 +90,28 @@ class Game:
                     pass
                 if tile == 'L':
                     Lootbox(self, col, row)
+        # self.camera_group = CameraGroup(self)
 
     def draw(self):
         self.screen.fill(BGCOLOR)
         self.draw_grid()
         self.all_sprites.draw(self.screen)
         self.draw_text(self.screen, "Coins " + str(self.player1.moneybag), 24, WHITE, WIDTH/2 - 32, 2)
+        self.drawWeaponOverlay()
+        self.drawHealthBar()
         pg.display.update()
         pg.display.flip()
+
+    def drawWeaponOverlay(self):
+        for i, weapon in enumerate(self.player1.loadout):
+            box = pg.draw.rect(self.screen, GREEN if weapon.enabled else LIGHTGRAY, (20 + 80*i, HEIGHT - 80, 60, 60), 3)
+            img = weapon.img_overlay.copy()
+            img_rect = img.get_rect(center=box.center)
+            self.screen.blit(img, img_rect)
+    
+    def drawHealthBar(self):
+        pg.draw.rect(self.screen, SOFTGRAY, pg.Rect(30, 30, 100, 20))
+        pg.draw.rect(self.screen, RED, pg.Rect(30, 30, self.player1.hitpoints, 20))
 
     # Runs our game
     def run(self):
@@ -104,6 +130,8 @@ class Game:
     def update(self):
         # Update sprites
         self.all_sprites.update()
+        # self.camera_group.update()
+        # self.camera_group.custom_draw(self.player1)
 
     def draw_grid(self):
         # Vertical lines

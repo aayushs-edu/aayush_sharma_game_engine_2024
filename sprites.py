@@ -10,6 +10,7 @@ import os
 from weapons import *
 from particles import *
 
+loadoutButtons = [pg.K_1, pg.K_2]
 
 # Player Sprite -- inherits from pygame Sprite class
 class Player(pg.sprite.Sprite):
@@ -35,7 +36,9 @@ class Player(pg.sprite.Sprite):
         self.y = y * TILESIZE
 
         self.moneybag = 0
-        self.loadout : list[Gun] = [Pistol(self.game, self, 'Mouse', PLAYER_COOLDOWN)]
+        self.loadout : list[Gun] = [Pistol(self.game, self, 'Mouse', PISTOL_COOLDOWN), Shotgun(self.game, self, 'Mouse', SHOTGUN_COOLDOWN)]
+        self.activeWeapon = self.loadout[0]
+        self.activeWeapon.enabled = True
 
         self.powerups = []
         self.powered_up = False
@@ -119,8 +122,15 @@ class Player(pg.sprite.Sprite):
         self.vx, self.vy = 0, 0
         clicks = pg.mouse.get_pressed()
         keys = pg.key.get_pressed()
+        for key in loadoutButtons:
+            if keys[key]:
+                if self.activeWeapon is not self.loadout[loadoutButtons.index(key)]:
+                    self.activeWeapon.enabled = False
+                    self.activeWeapon = self.loadout[loadoutButtons.index(key)]
+                    self.activeWeapon.enabled = True
+                    pg.mixer.Sound.play(self.game.gun_cock)
         if clicks[0]:
-            self.loadout[0].shoot()
+            self.activeWeapon.shoot(ORANGE)
         if keys[pg.K_LEFT] or keys[pg.K_a]:
             self.vx = -self.speed
         if keys[pg.K_RIGHT] or keys[pg.K_d]:
@@ -149,7 +159,7 @@ class Wall(pg.sprite.Sprite):
         # Give color
         self.image.fill(GRAY)
         # Rectangular area of wall
-        self.rect = self.image.get_rect(center=(x*TILESIZE, y*TILESIZE))
+        self.rect = self.image.get_rect(topleft=(x*TILESIZE, y*TILESIZE))
         self.x = x
         self.y = y
 
@@ -257,6 +267,7 @@ class Mob(pg.sprite.Sprite):
         self.speed = 5
 
         self.weapon = Pistol(self.game, self, self.target.rect, MOB_COOLDOWN)
+        self.weapon.enabled = True
 
     def update(self):
         self.vx, self.vy = (Vector2(self.target.rect.center) - Vector2(self.x, self.y)) / TILESIZE * self.speed
@@ -268,7 +279,7 @@ class Mob(pg.sprite.Sprite):
         self.rect.y = self.y
         self.collide_with_walls('y')
 
-        self.weapon.shoot()
+        self.weapon.shoot(REDORANGE)
 
     def collide_with_walls(self, dir):
         if dir == 'x':

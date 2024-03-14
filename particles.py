@@ -9,7 +9,7 @@ from settings import *
 from math import floor
 
 class Particle(Sprite):
-    def __init__(self, game, x, y, maxSize, maxDist, maxAngle, dur):
+    def __init__(self, game, x, y, maxSize, maxDist, maxAngle, dur, color):
         self.groups = game.all_sprites
         # init superclass
         pg.sprite.Sprite.__init__(self, self.groups)
@@ -18,7 +18,7 @@ class Particle(Sprite):
 
         dim = rand.random() * maxSize
         self.image = pg.Surface((dim, dim))
-        self.image.fill(ORANGE)
+        self.image.fill(color)
         self.x = x
         self.y = y
         self.rect = self.image.get_rect(center=(self.x, self.y))
