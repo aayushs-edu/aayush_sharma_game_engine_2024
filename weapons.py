@@ -3,6 +3,7 @@ from pygame import Vector2
 import math
 from settings import *
 import random as rand
+from particles import *
 
 # Rotate function to be used for guns
 def rotate_img_on_pivot(img, angle, pivot, origin):
@@ -31,7 +32,7 @@ class Gun(pg.sprite.Sprite):
         self.image = self.image_orig
 
         self.pivot = Vector2(self.holder.rect.center)
-        self.pos = self.pivot + (10, 0)
+        self.pos = self.pivot + (20, 0)
         self.rect = self.image.get_rect(center=self.pos)
 
         self.flipped_img = pg.transform.flip(self.image_orig, False, True)
@@ -47,11 +48,14 @@ class Gun(pg.sprite.Sprite):
         self.enabled = True
         self.disabledLifetime = 5
 
+        self.flipped = False
+        self.angle = 0
+
     def update(self):
         if self.enabled:
             # Stick to player
             self.pivot = Vector2(self.holder.rect.center)
-            self.pos = self.pivot + (10, 0)
+            self.pos = self.pivot + (20, 0)
 
             if self.target == 'Mouse': self.rotate(Vector2(pg.mouse.get_pos()))
             else: self.rotate(self.target.center)
@@ -67,24 +71,26 @@ class Gun(pg.sprite.Sprite):
 
     def rotate(self, target):
         offset = Vector2(target) - self.pivot
-        angle = -math.degrees(math.atan2(offset.y, offset.x))
+        self.angle = -math.degrees(math.atan2(offset.y, offset.x))
 
         if target[0] < self.pivot.x:
+            self.flipped = True
             self.image_orig = self.flipped_img
         else: 
+            self.flipped = False
             self.image_orig = self.unflipped_img
-        self.shooting_point = self.pivot + (0, -12) + Vector2(self.rect.width*0.9, 0).rotate(-(angle+15))
-        self.image, self.rect = rotate_img_on_pivot(self.image_orig, angle, Vector2(self.pivot), Vector2(self.pos[0], self.pos[1]-5))
+        self.shooting_point = rotate_point_on_pivot(self.angle, Vector2(self.pivot), self.pivot + (max(self.image.get_width(), self.image.get_height()), -5 * (-1 if self.flipped else 1)))
+        pg.draw.line(self.game.screen, (255, 0, 0), (self.pivot.x, self.pivot.y), (self.shooting_point.x, self.shooting_point.y))
+        pg.display.flip()
+        self.image, self.rect = rotate_img_on_pivot(self.image_orig, self.angle, Vector2(self.pivot), Vector2(self.pos))
         
     def shoot(self):
         if self.cool_dur <= 0:
-            if self.target == 'Mouse': 
-                target = Vector2(pg.mouse.get_pos())
-            else: target = self.target.center
+            Bullet(self.game, *self.shooting_point, self.angle, self.holder)
 
-            offset = target - self.shooting_point
-            angle = -math.degrees(math.atan2(offset.y, offset.x))
-            Bullet(self.game, *self.shooting_point, angle, self.holder)
+            pDir = -1 if self.flipped else 1
+            for _ in range(5):
+                Particle(self.game, *self.shooting_point, 15, 100*pDir, 40, 5)
 
             self.cool_dur = self.cooldown
     
@@ -112,7 +118,7 @@ class Bullet(pg.sprite.Sprite):
         # Set dimensions 
         self.image = pg.image.load('./assets/bullet.png')
 
-        self.rect = self.image.get_rect(topleft=(x, y))
+        self.rect = self.image.get_rect(center=(x, y))
         self.x = x
         self.y = y
 

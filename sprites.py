@@ -8,6 +8,7 @@ from pygame import Vector2
 import random as rand
 import os
 from weapons import *
+from particles import *
 
 
 # Player Sprite -- inherits from pygame Sprite class
@@ -249,7 +250,7 @@ class Mob(pg.sprite.Sprite):
         self.image.fill(RED)
         # Rectangular area of wall
         self.rect = self.image.get_rect()
-        self.vx, vy = 0, 0
+        self.vx, self.vy = 0, 0
         self.x = x * TILESIZE
         self.y = y * TILESIZE
 
@@ -288,35 +289,6 @@ class Mob(pg.sprite.Sprite):
                     self.y = hits[0].rect.bottom
                 self.vy = 0
                 self.rect.y = self.y
-    
-# class ParticleSplash:
-#     def __init__(self, screen, x, y, duration):
-#         self.screen = screen
-#         self.x = x
-#         self.y = y
-#         self.duration = duration
-#         self.particles = []
-
-#     def emit(self):
-#         if self.particles:
-#             self.delete_particles()
-#             for particle in self.particles:
-#                 particle[0][1] += particle[2][0]
-#                 particle[0][0] += particle[2][1]
-#                 particle[1] -= 0.2
-#                 pg.draw.circle(self.screen,pg.Color('White'),particle[0], int(particle[1]))
-#                 print('added particle')
-
-#     def add_particles(self):
-#         radius = 100
-#         direction_x = rand.randint(-3,3)
-#         direction_y = rand.randint(-3,3)
-#         particle_circle = [[self.x,self.y],radius,[direction_x,direction_y]]
-#         self.particles.append(particle_circle)
-
-#     def delete_particles(self):
-#         particle_copy = [particle for particle in self.particles if particle[1] > 0]
-#         self.particles = particle_copy
                 
 class Lootbox(pg.sprite.Sprite):
     def __init__(self, game, x, y):
@@ -325,7 +297,7 @@ class Lootbox(pg.sprite.Sprite):
         pg.sprite.Sprite.__init__(self, self.groups)
         # set game class
         self.game = game
-        # Set dimensions 
+        # Set dimensions
         self.image = pg.transform.scale(pg.image.load('./assets/chest/chest1.png'), (TILESIZE*2.5, TILESIZE*2.5))
         # Give color
         # Rectangular area of wall
@@ -376,4 +348,3 @@ class Lootbox(pg.sprite.Sprite):
         if self.fading: self.fade()
         else: self.checkNearby()
 
-        
