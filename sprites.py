@@ -10,7 +10,7 @@ import os
 from weapons import *
 from particles import *
 
-loadoutButtons = [pg.K_1, pg.K_2]
+loadoutButtons = [pg.K_1, pg.K_2, pg.K_3]
 
 # Player Sprite -- inherits from pygame Sprite class
 class Player(pg.sprite.Sprite):
@@ -32,7 +32,7 @@ class Player(pg.sprite.Sprite):
         self.hitpoints = 100
         self.dashing = False
         self.dashLeft = 0.2
-        self.dashCooldown = 2
+        self.dashCooldown = 1
         self.dashCoolLeft = 0
 
         self.vx, vy = 0, 0
@@ -40,7 +40,7 @@ class Player(pg.sprite.Sprite):
         self.y = y * TILESIZE
 
         self.moneybag = 0
-        self.loadout : list[Gun] = [Pistol(self.game, self, 'Mouse', PISTOL_COOLDOWN), Shotgun(self.game, self, 'Mouse', SHOTGUN_COOLDOWN)]
+        self.loadout : list[Gun] = [Pistol(self.game, self, 'Mouse', PISTOL_COOLDOWN), Shotgun(self.game, self, 'Mouse', SHOTGUN_COOLDOWN), Rifle(self.game, self, 'Mouse', RIFLE_COOLDOWN)]
         self.activeWeapon = self.loadout[0]
         self.activeWeapon.enabled = True
 
@@ -91,12 +91,18 @@ class Player(pg.sprite.Sprite):
                     print('POWERED UP')
                     hits[0].enable()
                     self.powerups.append(hits[0])
+            if hits[0].__class__.__name__ == 'Health' and hits[0].collectable:
+                if not hits[0].enabled:
+                    hits[0].enable()
 
     def update(self):
         # Handle powerups
         if self.powerups:
             self.powered_up = True
             for p in self.powerups:
+                if p.forever:
+                    self.powerups.remove(p)
+                    continue
                 if p.dur <= 0:
                     p.disable()
                     self.powerups.remove(p)
@@ -104,6 +110,7 @@ class Player(pg.sprite.Sprite):
 
         if self.dashing:
             pg.display.flip()
+            Particle(self.game, self.x, self.y, TILESIZE, 10, 0, 1, YELLOW if self.powered_up else GREEN)
             self.dashLeft -= self.game.dt
             if self.dashLeft <= 0:
                 self.dashing = False
@@ -137,8 +144,9 @@ class Player(pg.sprite.Sprite):
         keys = pg.key.get_pressed()
         if clicks[0]:
             self.activeWeapon.shoot(ORANGE)
-        if clicks[1]:
+        if keys[pg.K_q]:
             Mob(self.game, self, 3, 3)
+            print('Spawned mob')
         if keys[pg.K_SPACE] and not self.dashing and self.dashCoolLeft <= 0:
             print('DASH')
             self.dashing = True
@@ -233,6 +241,8 @@ class PowerUp(pg.sprite.Sprite):
         self.delay = delay
         self.collectable = False
         self.dur = dur
+        if self.dur < 0:
+            self.forever = True
         self.enabled = False
     
     def update(self):
@@ -264,6 +274,19 @@ class Speed(PowerUp):
         print('done')
         self.game.player1.speed -= 100
         self.kill()
+
+class Health(PowerUp):
+    def __init__(self, game, x, y, delay):
+        
+        # Set dimensions 
+        self.image = pg.transform.scale(pg.image.load('./assets/potions/health1.png'), (TILESIZE, TILESIZE))
+        super().__init__(game, x, y, delay, -1, self.image)
+
+    def effect(self):
+        print('HEALTH')
+        self.game.player1.hitpoints = min(100, self.game.player1.hitpoints + 20)
+        self.kill()
+        
 
 class Mob(pg.sprite.Sprite):
     def __init__(self, game, target, x, y):

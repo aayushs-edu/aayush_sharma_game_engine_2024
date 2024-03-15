@@ -154,6 +154,13 @@ class Pistol(Gun):
         reload_sound = game.pistol_reload
         super().__init__(game, holder, target, cooldown, self.image, sound, reload_sound, magSize=6, reloadDur=1.5, recoil=60)
 
+class Rifle(Gun):
+    def __init__(self, game, holder, target, cooldown):
+        self.image = pg.transform.scale(pg.image.load('./assets/rifle.png').convert_alpha(), (52, 14))
+        sound = game.pistol_shot
+        reload_sound = game.pistol_reload
+        super().__init__(game, holder, target, cooldown, self.image, sound, reload_sound, magSize=30, reloadDur=1, recoil=15)
+
 class Shotgun(Gun):
     def __init__(self, game, holder, target, cooldown):
         self.image = pg.transform.scale(pg.image.load('./assets/shotgun.png').convert_alpha(), (44, 16))
