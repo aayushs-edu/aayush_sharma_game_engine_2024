@@ -1,5 +1,5 @@
-WIDTH = 1024
-HEIGHT = 768
+WIDTH = 1920
+HEIGHT = 1088
 # Canvas height and width
 
 FPS = 30

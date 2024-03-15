@@ -20,7 +20,7 @@ def rotate_point_on_pivot(angle, pivot, origin):
     return new_pt
 
 class Gun(pg.sprite.Sprite):
-    def __init__(self, game, holder, target, cooldown, img, sound, magSize, reloadDur, recoil):
+    def __init__(self, game, holder, target, cooldown, img, sound, reload_sound, magSize, reloadDur, recoil):
         self.groups = game.all_sprites, game.guns
         self.game = game
         self.holder = holder
@@ -62,13 +62,13 @@ class Gun(pg.sprite.Sprite):
         self.recoil_timer = self.recoil_time
 
         self.sound = sound
+        self.reload_sound = reload_sound
         pg.mixer.Sound.play(self.game.gun_cock)
 
     def update(self):
         if self.recoiling:
             self.recoil_timer -= self.game.dt
             if self.recoil_timer <= 0:
-                print('STOP')
                 self.recoiling = False
                 self.recoil_timer = self.recoil_time
         if self.dead:
@@ -93,9 +93,7 @@ class Gun(pg.sprite.Sprite):
                 if self.cool_dur > 0:
                     self.cool_dur -= 2 * self.game.dt
                 if self.reloading:
-                    print('Reloading')
                     if self.reloadTimeLeft <= 0:
-                        print('Finished Reloading')
                         self.shotsLeft = self.magSize
                         self.reloading = False
                         self.reloadTimeLeft = self.reloadDur
@@ -106,7 +104,6 @@ class Gun(pg.sprite.Sprite):
         offset = Vector2(target) - self.pivot
         angle = -math.degrees(math.atan2(offset.y, offset.x))
         if self.recoiling:
-            print('Recoiling')
             self.angle += (angle - self.angle) / 5
         else:
             self.angle = angle
@@ -127,8 +124,6 @@ class Gun(pg.sprite.Sprite):
         if self.cool_dur <= 0 and not self.reloading:
             Bullet(self.game, *self.shooting_point, self.angle, self.holder, color)
             
-            # recoil (TODO)
-            
             pDir = -1 if self.flipped else 1
             for _ in range(5):
                 Particle(self.game, *self.shooting_point, 15, 100*pDir, 40, 5, color)
@@ -139,6 +134,7 @@ class Gun(pg.sprite.Sprite):
             self.shotsLeft -= 1
             if self.shotsLeft <= 0:
                 self.reloading = True
+                pg.mixer.Sound.play(self.reload_sound)
 
             self.recoiling = True
 
@@ -155,13 +151,15 @@ class Pistol(Gun):
     def __init__(self, game, holder, target, cooldown):
         self.image = pg.transform.scale(pg.image.load('./assets/pistol.png').convert_alpha(), (35, 25))
         sound = game.pistol_shot
-        super().__init__(game, holder, target, cooldown, self.image, sound, magSize=6, reloadDur=1.5, recoil=60)
+        reload_sound = game.pistol_reload
+        super().__init__(game, holder, target, cooldown, self.image, sound, reload_sound, magSize=6, reloadDur=1.5, recoil=60)
 
 class Shotgun(Gun):
     def __init__(self, game, holder, target, cooldown):
         self.image = pg.transform.scale(pg.image.load('./assets/shotgun.png').convert_alpha(), (44, 16))
         sound = game.shotgun_shot
-        super().__init__(game, holder, target, cooldown, self.image, sound, magSize=3, reloadDur=3, recoil=60)
+        reload_sound = game.shotgun_reload
+        super().__init__(game, holder, target, cooldown, self.image, sound, reload_sound, magSize=3, reloadDur=3, recoil=120)
     
     def shoot(self, color):
         if self.cool_dur <= 0 and not self.reloading:
@@ -171,6 +169,9 @@ class Shotgun(Gun):
             self.shotsLeft -= 1
             if self.shotsLeft <= 0:
                 self.reloading = True
+                if not self.holder.__class__.__name__ == 'Mob':
+                    pg.mixer.Sound.play(self.reload_sound)
+
             pDir = -1 if self.flipped else 1
             for _ in range(5):
                 Particle(self.game, *self.shooting_point, 15, 100*pDir, 40, 5, color)
@@ -241,3 +242,8 @@ class Bullet(pg.sprite.Sprite):
                 self.kill()
                 for _ in range(10):
                     Particle(self.game, self.x, self.y, 12, 80, 360, 1, YELLOW)
+            elif hits[0].__class__.__name__ == 'Bullet' and hits[0] is not self and hits[0].shooter is not self.shooter:
+                self.kill()
+                hits[0].kill()
+                for _ in range(10):
+                    Particle(self.game, self.x, self.y, 25, 200, 360, 1, YELLOW)

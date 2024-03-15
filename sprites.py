@@ -30,6 +30,10 @@ class Player(pg.sprite.Sprite):
 
         self.speed = 300
         self.hitpoints = 100
+        self.dashing = False
+        self.dashLeft = 0.2
+        self.dashCooldown = 2
+        self.dashCoolLeft = 0
 
         self.vx, vy = 0, 0
         self.x = x * TILESIZE
@@ -98,6 +102,15 @@ class Player(pg.sprite.Sprite):
                     self.powerups.remove(p)
         else: self.powered_up = False
 
+        if self.dashing:
+            pg.display.flip()
+            self.dashLeft -= self.game.dt
+            if self.dashLeft <= 0:
+                self.dashing = False
+                self.dashLeft = 0.2
+        else:
+            self.dashCoolLeft -= self.game.dt
+
         if self.powered_up:
             self.image.fill(YELLOW)
         else:
@@ -122,6 +135,22 @@ class Player(pg.sprite.Sprite):
         self.vx, self.vy = 0, 0
         clicks = pg.mouse.get_pressed()
         keys = pg.key.get_pressed()
+        if clicks[0]:
+            self.activeWeapon.shoot(ORANGE)
+        if clicks[1]:
+            Mob(self.game, self, 3, 3)
+        if keys[pg.K_SPACE] and not self.dashing and self.dashCoolLeft <= 0:
+            print('DASH')
+            self.dashing = True
+            self.dashCoolLeft = self.dashCooldown
+        if keys[pg.K_LEFT] or keys[pg.K_a]:
+            self.vx = -self.speed * (self.dashing + 1)
+        if keys[pg.K_RIGHT] or keys[pg.K_d]:
+            self.vx = self.speed * (self.dashing + 1)
+        if keys[pg.K_UP] or keys[pg.K_w]:
+            self.vy = -self.speed * (self.dashing + 1)
+        if keys[pg.K_DOWN] or keys[pg.K_s]:
+            self.vy = self.speed * (self.dashing + 1)
         for key in loadoutButtons:
             if keys[key]:
                 if self.activeWeapon is not self.loadout[loadoutButtons.index(key)]:
@@ -129,16 +158,6 @@ class Player(pg.sprite.Sprite):
                     self.activeWeapon = self.loadout[loadoutButtons.index(key)]
                     self.activeWeapon.enabled = True
                     pg.mixer.Sound.play(self.game.gun_cock)
-        if clicks[0]:
-            self.activeWeapon.shoot(ORANGE)
-        if keys[pg.K_LEFT] or keys[pg.K_a]:
-            self.vx = -self.speed
-        if keys[pg.K_RIGHT] or keys[pg.K_d]:
-            self.vx = self.speed
-        if keys[pg.K_UP] or keys[pg.K_w]:
-            self.vy = -self.speed
-        if keys[pg.K_DOWN] or keys[pg.K_s]:
-            self.vy = self.speed
         if self.vx != 0 and self.vy != 0:
             self.vx *= 0.7071
             self.vy *= 0.7071
@@ -259,10 +278,10 @@ class Mob(pg.sprite.Sprite):
         # Give color
         self.image.fill(RED)
         # Rectangular area of wall
-        self.rect = self.image.get_rect()
         self.vx, self.vy = 0, 0
         self.x = x * TILESIZE
         self.y = y * TILESIZE
+        self.rect = self.image.get_rect(center=(self.x, self.y))
 
         self.speed = 5
 

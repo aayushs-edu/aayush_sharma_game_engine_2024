@@ -38,13 +38,17 @@ class Game:
         # Overlay images
         self.bulletOverlay = pg.transform.rotozoom(pg.image.load('./assets/bulletOverlay.png'), -90, 0.04)
         self.bulletTrans = self.bulletOverlay.copy()
-        self.bulletTrans.fill((0, 0, 0, 30), special_flags=pg.BLEND_RGBA_MULT)
+        self.bulletTrans.fill((0, 0, 0, 60), special_flags=pg.BLEND_RGBA_MULT)
 
         # Sounds
         self.soundDir = os.path.join(asset_folder, 'sounds')
         self.gun_cock = pg.mixer.Sound(os.path.join(self.soundDir, 'gun-cock.ogg'))
         self.pistol_shot = pg.mixer.Sound(os.path.join(self.soundDir, 'pistol.ogg'))
+        self.pistol_shot.set_volume(0.5)
         self.shotgun_shot = pg.mixer.Sound(os.path.join(self.soundDir, 'shotgun.ogg'))
+        self.shotgun_shot.set_volume(0.5)
+        self.pistol_reload = pg.mixer.Sound(os.path.join(self.soundDir, 'pistol-reload.ogg'))
+        self.shotgun_reload = pg.mixer.Sound(os.path.join(self.soundDir, 'shotgun-reload.ogg'))
         self.music = pg.mixer.music.load(os.path.join(self.soundDir, 'music1.ogg'))
         # 'r'     open for reading (default)
         # 'w'     open for writing, truncating the file first
@@ -96,11 +100,11 @@ class Game:
                     pass
                 if tile == 'L':
                     Lootbox(self, col, row)
-        # self.camera_group = CameraGroup(self)
-
+        # self.camera = Camera(self, self.player1)
     def draw(self):
         self.screen.fill(BGCOLOR)
         self.draw_grid()
+        # self.camera.custom_draw()
         self.all_sprites.draw(self.screen)
         self.draw_text(self.screen, "Coins " + str(self.player1.moneybag), 24, WHITE, WIDTH/2 - 32, 2)
         self.drawWeaponOverlay()
@@ -155,6 +159,8 @@ class Game:
         self.all_sprites.update()
         # self.camera_group.update()
         # self.camera_group.custom_draw(self.player1)
+        if len(self.particles.sprites()) > 100:
+            self.particles.remove(self.particles.sprites()[100:])
 
     def draw_grid(self):
         # Vertical lines
