@@ -52,7 +52,7 @@ class Gun(pg.sprite.Sprite):
 
         self.enabled = False
         self.dead = False
-        self.disabledLifetime = 5
+        self.disabledLifetime = 10
 
         self.flipped = False
         self.angle = 0
@@ -234,10 +234,7 @@ class Bullet(pg.sprite.Sprite):
                 Particle(self.game, self.x, self.y, 10, 60, 360, 1, self.color)
 
             if hits[0].__class__.__name__ == "Mob" and not self.shooter.__class__.__name__ == "Mob":
-                for _ in range(10):
-                    Particle(self.game, self.x, self.y, 20, 120, 360, 1, RED)
-                hits[0].kill()
-                hits[0].weapon.dead = True
+                hits[0].die()
                 self.kill()
             elif hits[0].__class__.__name__ == "Player" and self.shooter.__class__.__name__ == "Mob":
                 for _ in range(10):

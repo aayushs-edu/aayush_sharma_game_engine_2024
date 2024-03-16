@@ -94,6 +94,13 @@ class Player(pg.sprite.Sprite):
             if hits[0].__class__.__name__ == 'Health' and hits[0].collectable:
                 if not hits[0].enabled:
                     hits[0].enable()
+            if hits[0].__class__.__name__ == 'Mob' and self.dashing:
+                hits[0].die()
+            if hits[0].__class__.__bases__[0].__name__ == 'Gun' and hits[0] not in self.loadout:
+                if hits[0].dead:
+                    print('Pickup')
+                    self.pickupWeapon = hits[0]
+        else: self.pickupWeapon = None
 
     def update(self):
         # Handle powerups
@@ -134,6 +141,8 @@ class Player(pg.sprite.Sprite):
         self.collide_with_walls('y')
         self.collide_with_group(self.game.coins)
         self.collide_with_group(self.game.powerups)
+        self.collide_with_group(self.game.mobs)
+        self.collide_with_group(self.game.guns)
         if self.hitpoints <= 0:
             self.game.playing = False
             print('dead')
@@ -145,6 +154,18 @@ class Player(pg.sprite.Sprite):
         if clicks[0]:
             self.activeWeapon.shoot(ORANGE)
         if keys[pg.K_q]:
+            if self.activeWeapon in self.loadout: self.loadout.remove(self.activeWeapon)
+            self.activeWeapon.dead=True
+        if keys[pg.K_z] and self.pickupWeapon:
+            self.activeWeapon.enabled = False
+            self.pickupWeapon.dead = False
+            self.pickupWeapon.holder = self
+            self.pickupWeapon.target = 'Mouse'
+            self.pickupWeapon.cooldown = PISTOL_COOLDOWN
+            self.loadout.append(self.pickupWeapon)
+            self.activeWeapon = self.loadout[-1]
+            self.pickupWeapon = None
+        if keys[pg.K_r]:
             Mob(self.game, self, 3, 3)
             print('Spawned mob')
         if keys[pg.K_SPACE] and not self.dashing and self.dashCoolLeft <= 0:
@@ -161,9 +182,10 @@ class Player(pg.sprite.Sprite):
             self.vy = self.speed * (self.dashing + 1)
         for key in loadoutButtons:
             if keys[key]:
-                if self.activeWeapon is not self.loadout[loadoutButtons.index(key)]:
+                idx = loadoutButtons.index(key)
+                if self.activeWeapon is not self.loadout[idx]:
                     self.activeWeapon.enabled = False
-                    self.activeWeapon = self.loadout[loadoutButtons.index(key)]
+                    self.activeWeapon = self.loadout[idx]
                     self.activeWeapon.enabled = True
                     pg.mixer.Sound.play(self.game.gun_cock)
         if self.vx != 0 and self.vy != 0:
@@ -241,8 +263,7 @@ class PowerUp(pg.sprite.Sprite):
         self.delay = delay
         self.collectable = False
         self.dur = dur
-        if self.dur < 0:
-            self.forever = True
+        self.forever = True if dur < 0 else False
         self.enabled = False
     
     def update(self):
@@ -342,6 +363,11 @@ class Mob(pg.sprite.Sprite):
                     self.y = hits[0].rect.bottom
                 self.vy = 0
                 self.rect.y = self.y
+    def die(self):
+        for _ in range(20):
+            Particle(self.game, self.x, self.y, 20, 120, 360, 2, RED)
+        self.weapon.dead = True
+        self.kill()
                 
 class Lootbox(pg.sprite.Sprite):
     def __init__(self, game, x, y):
