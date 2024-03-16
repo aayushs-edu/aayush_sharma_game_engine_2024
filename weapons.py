@@ -21,7 +21,7 @@ def rotate_point_on_pivot(angle, pivot, origin):
 
 class Gun(pg.sprite.Sprite):
     def __init__(self, game, holder, target, cooldown, img, sound, reload_sound, magSize, reloadDur, recoil):
-        self.groups = game.all_sprites, game.guns
+        self.groups = game.all_sprites, game.guns, game.active_sprites
         self.game = game
         self.holder = holder
         self.target = target
@@ -35,6 +35,7 @@ class Gun(pg.sprite.Sprite):
 
         self.pivot = Vector2(self.holder.rect.center)
         self.pos = self.pivot + (20, 0)
+        self.x, self.y = self.pos
         self.rect = self.image.get_rect(center=self.pos)
 
         self.alpha = 255
@@ -85,6 +86,7 @@ class Gun(pg.sprite.Sprite):
                 # Stick to player
                 self.pivot = Vector2(self.holder.rect.center)
                 self.pos = self.pivot + (20, 0)
+                self.x, self.y = self.pos
                 
                 if self.target == 'Mouse': self.rotate(Vector2(pg.mouse.get_pos()))
                 else: self.rotate(self.target.center)
@@ -101,7 +103,7 @@ class Gun(pg.sprite.Sprite):
 
 
     def rotate(self, target):
-        offset = Vector2(target) - self.pivot
+        offset = Vector2(target) - (WIDTH // 2, HEIGHT // 2)
         angle = -math.degrees(math.atan2(offset.y, offset.x))
         if self.recoiling:
             self.angle += (angle - self.angle) / 5
@@ -195,7 +197,7 @@ class Shotgun(Gun):
 # Bullet Sprites
 class Bullet(pg.sprite.Sprite):
     def __init__(self, game, x, y, angle, shooter, color):
-        self.groups = game.all_sprites, game.bullets
+        self.groups = game.all_sprites, game.bullets, game.active_sprites
         # init superclass
         pg.sprite.Sprite.__init__(self, self.groups)
         # set game class

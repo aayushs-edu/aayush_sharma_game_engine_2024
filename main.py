@@ -65,7 +65,7 @@ class Game:
         It is used to ensure that a resource is properly closed or released 
         after it is used. This can help to prevent errors and leaks.
         '''
-        with open(os.path.join(game_folder, 'map.txt'), 'rt') as f:
+        with open(os.path.join(game_folder, 'map.txt'), 'r') as f:
             for line in f:
                 print(line)
                 self.map_data.append(line)
@@ -82,6 +82,7 @@ class Game:
         self.particles = pg.sprite.Group()
         self.player = pg.sprite.Group()
         self.cameras = pg.sprite.Group()
+        self.active_sprites = pg.sprite.Group()
         for row, tiles in enumerate(self.map_data):
             print(row)
             for col, tile in enumerate(tiles):
@@ -91,6 +92,7 @@ class Game:
                     Wall(self, col, row)
                 if tile == 'P':
                     self.player1 = Player(self, col, row)
+                    self.camera = Camera(self)
                 if tile == 'C':
                     Coin(self, col, row, 0)
                 if tile == 'U':
@@ -102,12 +104,12 @@ class Game:
                     pass
                 if tile == 'L':
                     Lootbox(self, col, row)
-        # self.camera = Camera(self, self.player1)
     def draw(self):
         self.screen.fill(BGCOLOR)
         self.draw_grid()
         # self.camera.custom_draw()
-        self.all_sprites.draw(self.screen)
+        self.camera.custom_draw(self.player1)
+        # self.all_sprites.draw(self.screen)
         self.draw_text(self.screen, "Coins " + str(self.player1.moneybag), 24, WHITE, WIDTH/2 - 32, 2)
         self.drawWeaponOverlay()
         self.drawAmmoOverlay()

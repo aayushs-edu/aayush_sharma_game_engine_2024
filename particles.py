@@ -10,7 +10,7 @@ from math import floor
 
 class Particle(Sprite):
     def __init__(self, game, x, y, maxSize, maxDist, maxAngle, dur, color):
-        self.groups = game.all_sprites
+        self.groups = game.all_sprites, game.active_sprites, game.particles
         # init superclass
         pg.sprite.Sprite.__init__(self, self.groups)
 

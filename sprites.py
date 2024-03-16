@@ -10,13 +10,13 @@ import os
 from weapons import *
 from particles import *
 
-loadoutButtons = [pg.K_1, pg.K_2, pg.K_3]
+loadoutButtons = [pg.K_1, pg.K_2, pg.K_3, pg.K_4, pg.K_5]
 
 # Player Sprite -- inherits from pygame Sprite class
 class Player(pg.sprite.Sprite):
     # Init Player
     def __init__(self, game, x, y):
-        self.groups = game.all_sprites, game.player
+        self.groups = game.all_sprites, game.player, game.active_sprites
         # init superclass
         pg.sprite.Sprite.__init__(self, self.groups)
         # set game class
@@ -156,7 +156,7 @@ class Player(pg.sprite.Sprite):
         if keys[pg.K_q]:
             if self.activeWeapon in self.loadout: self.loadout.remove(self.activeWeapon)
             self.activeWeapon.dead=True
-        if keys[pg.K_z] and self.pickupWeapon:
+        if keys[pg.K_z] and self.pickupWeapon and len(self.loadout) < 5:
             self.activeWeapon.enabled = False
             self.pickupWeapon.dead = False
             self.pickupWeapon.holder = self
@@ -181,8 +181,8 @@ class Player(pg.sprite.Sprite):
         if keys[pg.K_DOWN] or keys[pg.K_s]:
             self.vy = self.speed * (self.dashing + 1)
         for key in loadoutButtons:
-            if keys[key]:
-                idx = loadoutButtons.index(key)
+            idx = loadoutButtons.index(key)
+            if keys[key] and idx < len(self.loadout):
                 if self.activeWeapon is not self.loadout[idx]:
                     self.activeWeapon.enabled = False
                     self.activeWeapon = self.loadout[idx]
@@ -208,14 +208,18 @@ class Wall(pg.sprite.Sprite):
         # Give color
         self.image.fill(GRAY)
         # Rectangular area of wall
-        self.rect = self.image.get_rect(topleft=(x*TILESIZE, y*TILESIZE))
-        self.x = x
-        self.y = y
+        self.x = x * TILESIZE
+        self.y = y * TILESIZE
+        self.rect = self.image.get_rect(topleft=(self.x, self.y))
+    
+    def update(self):
+        self.rect.x = self.x
+        self.rect.y = self.y
 
 # Coin Sprites
 class Coin(pg.sprite.Sprite):
     def __init__(self, game, x, y, delay):
-        self.groups = game.all_sprites, game.coins
+        self.groups = game.all_sprites, game.coins, game.active_sprites
         # init superclass
         pg.sprite.Sprite.__init__(self, self.groups)
         # set game class
@@ -239,8 +243,8 @@ class Coin(pg.sprite.Sprite):
             self.image = pg.transform.scale(pg.image.load(f'./assets/coin/{self.coin_images[self.frame]}'), (TILESIZE, TILESIZE))
             self.frameDelay = 0.1
         if (self.rect.x, self.rect.y) != (self.x, self.y):
-                self.rect.x += (self.x - self.rect.x) * 0.2
-                self.rect.y += (self.y - self.rect.y) * 0.2
+                self.rect.x += (self.x - self.rect.x) * (1 if self.collectable else 0.2)
+                self.rect.y += (self.y - self.rect.y) * (1 if self.collectable else 0.2)
         self.delay = max(0, self.delay - self.game.dt)
         if self.delay <= 0:
             self.collectable = True
@@ -248,7 +252,7 @@ class Coin(pg.sprite.Sprite):
 
 class PowerUp(pg.sprite.Sprite):
     def __init__(self, game, x, y, delay, dur, img):
-        self.groups = game.all_sprites, game.powerups
+        self.groups = game.all_sprites, game.powerups, game.active_sprites
         # init superclass
         pg.sprite.Sprite.__init__(self, self.groups)
         # set game class
@@ -270,8 +274,8 @@ class PowerUp(pg.sprite.Sprite):
         if self.enabled:
             self.dur -= self.game.dt
         if (self.rect.x, self.rect.y) != (self.x, self.y):
-                self.rect.x += (self.x - self.rect.x) * 0.2
-                self.rect.y += (self.y - self.rect.y) * 0.2
+                self.rect.x += (self.x - self.rect.x) * (1 if self.collectable else 0.2)
+                self.rect.y += (self.y - self.rect.y) * (1 if self.collectable else 0.2)
         self.delay = max(0, self.delay - self.game.dt)
         if self.delay <= 0:
             self.collectable = True
@@ -311,7 +315,7 @@ class Health(PowerUp):
 
 class Mob(pg.sprite.Sprite):
     def __init__(self, game, target, x, y):
-        self.groups = game.all_sprites, game.mobs
+        self.groups = game.all_sprites, game.mobs, game.active_sprites
         # init superclass
         pg.sprite.Sprite.__init__(self, self.groups)
         # set game class
@@ -371,7 +375,7 @@ class Mob(pg.sprite.Sprite):
                 
 class Lootbox(pg.sprite.Sprite):
     def __init__(self, game, x, y):
-        self.groups = game.all_sprites
+        self.groups = game.all_sprites, game.active_sprites
         # init superclass
         pg.sprite.Sprite.__init__(self, self.groups)
         # set game class
