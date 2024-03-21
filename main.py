@@ -3,7 +3,6 @@
 enemies that follow player(could have shooting capability) - goal: kill enemy, rule: don't die to it
 projectiles(guns/bullets) - verb, freedom, goal: shoot enemy
 lootbox -> powerups/coins - verb: open lootbox, freedom, goal: get items
-The player shoots an enemy and it dies and drops its weapon.
 '''
 
 # Import modules
@@ -38,7 +37,7 @@ class Game:
         # Overlay images
         self.bulletOverlay = pg.transform.rotozoom(pg.image.load('./assets/bulletOverlay.png'), -90, 0.04)
         self.bulletTrans = self.bulletOverlay.copy()
-        self.bulletTrans.fill((0, 0, 0, 60), special_flags=pg.BLEND_RGBA_MULT)
+        self.bulletTrans.fill((255, 255, 255, 60), special_flags=pg.BLEND_RGBA_MULT)
 
         # Sounds
         self.soundDir = os.path.join(asset_folder, 'sounds')

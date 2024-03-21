@@ -31,7 +31,7 @@ class Player(pg.sprite.Sprite):
         self.speed = 300
         self.hitpoints = 100
         self.dashing = False
-        self.dashLeft = 0.2
+        self.dashLeft = 0.1
         self.dashCooldown = 1
         self.dashCoolLeft = 0
 
@@ -173,13 +173,13 @@ class Player(pg.sprite.Sprite):
             self.dashing = True
             self.dashCoolLeft = self.dashCooldown
         if keys[pg.K_LEFT] or keys[pg.K_a]:
-            self.vx = -self.speed * (self.dashing + 1)
+            self.vx = -self.speed * (self.dashing*2 + 1)
         if keys[pg.K_RIGHT] or keys[pg.K_d]:
-            self.vx = self.speed * (self.dashing + 1)
+            self.vx = self.speed * (self.dashing*2 + 1)
         if keys[pg.K_UP] or keys[pg.K_w]:
-            self.vy = -self.speed * (self.dashing + 1)
+            self.vy = -self.speed * (self.dashing*2 + 1)
         if keys[pg.K_DOWN] or keys[pg.K_s]:
-            self.vy = self.speed * (self.dashing + 1)
+            self.vy = self.speed * (self.dashing*2 + 1)
         for key in loadoutButtons:
             idx = loadoutButtons.index(key)
             if keys[key] and idx < len(self.loadout):
@@ -333,7 +333,7 @@ class Mob(pg.sprite.Sprite):
 
         self.speed = 5
 
-        self.weapon = rand.choice([Pistol(self.game, self, self.target.rect, MOB_COOLDOWN), Shotgun(self.game, self, self.target.rect, MOB_COOLDOWN)])
+        self.weapon = rand.choices([Pistol(self.game, self, self.target.rect, MOB_COOLDOWN), Shotgun(self.game, self, self.target.rect, MOB_COOLDOWN)], k=1, weights=[3, 1])[0]
         self.weapon.enabled = True
 
     def update(self):
@@ -392,7 +392,7 @@ class Lootbox(pg.sprite.Sprite):
         self.alpha = 255
         self.fading = False
 
-        self.items = ['Coin', 'PowerUp']
+        self.items = ['Coin', 'PowerUp', 'Health']
 
     # Input parameter is whether the user is pressing E or not (True or False)
     def checkNearby(self):
@@ -413,7 +413,7 @@ class Lootbox(pg.sprite.Sprite):
             self.kill()  
 
     def open(self):
-        items = rand.choices(self.items, k=2)
+        items = rand.choices(self.items, k=3)
         print(items)
         for item in items:
             vec = pg.Vector2(TILESIZE, TILESIZE).rotate(rand.random() * 360)
@@ -423,6 +423,10 @@ class Lootbox(pg.sprite.Sprite):
                 coin.y += vec[1]
             elif item == 'PowerUp': 
                 powerup = Speed(self.game, self.x, self.y, 1)
+                powerup.x -= vec[0]
+                powerup.y -= vec[1]
+            elif item == 'Health': 
+                powerup = Health(self.game, self.x, self.y, 1)
                 powerup.x -= vec[0]
                 powerup.y -= vec[1]
             

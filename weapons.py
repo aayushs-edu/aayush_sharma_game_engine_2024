@@ -103,17 +103,20 @@ class Gun(pg.sprite.Sprite):
 
 
     def rotate(self, target):
-        offset = Vector2(target) - (WIDTH // 2, HEIGHT // 2)
+        if self.holder.__class__.__name__ == 'Mob':
+            offset = Vector2(self.target.center) - Vector2(self.pos)
+        else:
+            offset = Vector2(target) - (WIDTH // 2, HEIGHT // 2)
         angle = -math.degrees(math.atan2(offset.y, offset.x))
         if self.recoiling:
-            self.angle += (angle - self.angle) / 5
+            self.angle += (angle - self.angle) / 2
         else:
             self.angle = angle
 
-        if target[0] < self.pivot.x and not self.flipped:
+        if target[0] < WIDTH // 2 and not self.flipped:
             self.flipped = True
             self.image_orig = pg.transform.flip(self.image_orig, False, True)
-        elif target[0] > self.pivot.x and self.flipped: 
+        elif target[0] > WIDTH // 2 and self.flipped: 
             self.flipped = False
             self.image_orig = pg.transform.flip(self.image_orig, False, True)
 
@@ -127,8 +130,8 @@ class Gun(pg.sprite.Sprite):
             Bullet(self.game, *self.shooting_point, self.angle, self.holder, color)
             
             pDir = -1 if self.flipped else 1
-            for _ in range(5):
-                Particle(self.game, *self.shooting_point, 15, 100*pDir, 40, 5, color)
+            for _ in range(10):
+                Particle(self.game, *self.shooting_point, 15, 100*pDir, 40, 5, YELLOW)
 
             self.cool_dur = self.cooldown
             pg.mixer.Sound.play(self.sound)
@@ -182,8 +185,8 @@ class Shotgun(Gun):
                     pg.mixer.Sound.play(self.reload_sound)
 
             pDir = -1 if self.flipped else 1
-            for _ in range(5):
-                Particle(self.game, *self.shooting_point, 15, 100*pDir, 40, 5, color)
+            for _ in range(10):
+                Particle(self.game, *self.shooting_point, 15, 100*pDir, 40, 5, YELLOW)
 
             self.cool_dur = self.cooldown
 
