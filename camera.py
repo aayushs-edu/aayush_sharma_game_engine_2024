@@ -4,7 +4,7 @@ from settings import *
 
 class Camera:
     def __init__(self, game):
-        self.offset = Vector2(300, 300)
+        self.offset = Vector2(0, 0)
         self.game = game
 
     def center_target(self, target):
@@ -15,11 +15,7 @@ class Camera:
 
         self.center_target(player)
 
-        for wall in self.game.walls:
-            wall_offset = wall.rect.topleft - self.offset
-            self.game.screen.blit(wall.image, wall_offset)
-
-        for sprite in self.game.active_sprites.sprites():
+        for sprite in self.game.all_sprites.sprites():
             offset_pos = sprite.rect.topleft - self.offset
             self.game.screen.blit(sprite.image, offset_pos)
             

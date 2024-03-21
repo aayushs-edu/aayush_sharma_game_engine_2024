@@ -21,28 +21,29 @@ def rotate_point_on_pivot(angle, pivot, origin):
 
 class Gun(pg.sprite.Sprite):
     def __init__(self, game, holder, target, cooldown, img, sound, reload_sound, magSize, reloadDur, recoil):
+        # Define sprite groups
         self.groups = game.all_sprites, game.guns, game.active_sprites
         self.game = game
         self.holder = holder
         self.target = target
-        # init superclass
+        
+        # Initialize sprite superclass
         pg.sprite.Sprite.__init__(self, self.groups)
-        # Set dimensions 
-
+        
+        # Set image and attributes
         self.img_overlay = img
         self.image_orig = img
         self.image = self.image_orig
-
+        
+        # Set position
         self.pivot = Vector2(self.holder.rect.center)
         self.pos = self.pivot + (20, 0)
         self.x, self.y = self.pos
         self.rect = self.image.get_rect(center=self.pos)
-
+        
+        # Set shooting attributes
         self.alpha = 255
-
         self.shooting_point = Vector2(0, 0)
-
-        # Shooting
         self.cooldown = cooldown
         self.cool_dur = 0
         self.magSize = magSize
@@ -50,34 +51,39 @@ class Gun(pg.sprite.Sprite):
         self.reloading = False
         self.reloadDur = reloadDur
         self.reloadTimeLeft = self.reloadDur
-
+        
+        # Set other attributes
         self.enabled = False
         self.dead = False
         self.disabledLifetime = 10
-
         self.flipped = False
         self.angle = 0
         self.recoiling = False
         self.recoil = recoil
         self.recoil_time = max(recoil/200, self.cooldown)
         self.recoil_timer = self.recoil_time
-
+        
+        # Set sounds
         self.sound = sound
         self.reload_sound = reload_sound
         pg.mixer.Sound.play(self.game.gun_cock)
 
     def update(self):
+        # Update recoil
         if self.recoiling:
             self.recoil_timer -= self.game.dt
             if self.recoil_timer <= 0:
                 self.recoiling = False
                 self.recoil_timer = self.recoil_time
+        
+        # Handle disabled state
         if self.dead:
             if self.disabledLifetime <= 0:
                 self.fade()
             else:
                 self.disabledLifetime -= self.game.dt
         else:
+            # Handle enabled state
             if not self.enabled:
                 self.image = self.image.copy()
                 self.image.fill((255, 255, 255, 0), special_flags=pg.BLEND_RGBA_MULT)
@@ -88,8 +94,11 @@ class Gun(pg.sprite.Sprite):
                 self.pos = self.pivot + (20, 0)
                 self.x, self.y = self.pos
                 
-                if self.target == 'Mouse': self.rotate(Vector2(pg.mouse.get_pos()))
-                else: self.rotate(self.target.center)
+                # Rotate gun towards target
+                if self.target == 'Mouse':
+                    self.rotate(Vector2(pg.mouse.get_pos()))
+                else:
+                    self.rotate(self.target.center)
 
                 # Cooldown
                 if self.cool_dur > 0:
@@ -99,20 +108,25 @@ class Gun(pg.sprite.Sprite):
                         self.shotsLeft = self.magSize
                         self.reloading = False
                         self.reloadTimeLeft = self.reloadDur
-                    else: self.reloadTimeLeft -= self.game.dt
-
+                    else:
+                        self.reloadTimeLeft -= self.game.dt
 
     def rotate(self, target):
+        # Calculate difference vector between holder and target
         if self.holder.__class__.__name__ == 'Mob':
             offset = Vector2(self.target.center) - Vector2(self.pos)
         else:
             offset = Vector2(target) - (WIDTH // 2, HEIGHT // 2)
+        # Calculate angle between holder and target
         angle = -math.degrees(math.atan2(offset.y, offset.x))
+
+        # Handle recoiling
         if self.recoiling:
             self.angle += (angle - self.angle) / 2
         else:
             self.angle = angle
 
+        # FLip sprite image if necessary
         if target[0] < WIDTH // 2 and not self.flipped:
             self.flipped = True
             self.image_orig = pg.transform.flip(self.image_orig, False, True)
@@ -120,15 +134,20 @@ class Gun(pg.sprite.Sprite):
             self.flipped = False
             self.image_orig = pg.transform.flip(self.image_orig, False, True)
 
-        self.shooting_point = rotate_point_on_pivot(self.angle, Vector2(self.pivot), self.pivot + (max(self.image.get_width(), self.image.get_height()), -5 * (-1 if self.flipped else 1)))
-        # pg.draw.line(self.game.screen, (255, 0, 0), (self.pivot.x, self.pivot.y), (self.shooting_point.x, self.shooting_point.y))
-        # pg.display.flip()
+        # Rotate shooting point and apply rotation to image
+        self.shooting_point = rotate_point_on_pivot(self.angle, 
+                                                    Vector2(self.pivot), 
+                                                    self.pivot + (max(self.image.get_width(), self.image.get_height()), 
+                                                    -5 * (-1 if self.flipped else 1)))
         self.image, self.rect = rotate_img_on_pivot(self.image_orig, self.angle, Vector2(self.pivot), Vector2(self.pos))
         
     def shoot(self, color):
+        # Fire bullet if conditions allow -- not cooling down, not reloading
         if self.cool_dur <= 0 and not self.reloading:
+            # Instantiate bullets
             Bullet(self.game, *self.shooting_point, self.angle, self.holder, color)
             
+            # Particle trail
             pDir = -1 if self.flipped else 1
             for _ in range(10):
                 Particle(self.game, *self.shooting_point, 15, 100*pDir, 40, 5, YELLOW)
@@ -136,6 +155,7 @@ class Gun(pg.sprite.Sprite):
             self.cool_dur = self.cooldown
             pg.mixer.Sound.play(self.sound)
 
+            # Handle magSize and reloading
             self.shotsLeft -= 1
             if self.shotsLeft <= 0:
                 self.reloading = True
@@ -143,15 +163,18 @@ class Gun(pg.sprite.Sprite):
 
             self.recoiling = True
 
+            # Apply recoil
             self.angle += (-self.recoil if self.flipped else self.recoil)
     
     def fade(self):
+        # Fade out the gun sprite
         self.alpha = max(0, self.alpha-2)  # alpha should never be < 0.
         self.image = self.image.copy()
         self.image.fill((255, 255, 255, self.alpha), special_flags=pg.BLEND_RGBA_MULT)
         if self.alpha <= 0:  # Kill the sprite when the alpha is <= 0.
             self.kill() 
 
+# Inherits from Gun class
 class Pistol(Gun):
     def __init__(self, game, holder, target, cooldown):
         self.image = pg.transform.scale(pg.image.load('./assets/pistol.png').convert_alpha(), (35, 25))
@@ -159,6 +182,7 @@ class Pistol(Gun):
         reload_sound = game.pistol_reload
         super().__init__(game, holder, target, cooldown, self.image, sound, reload_sound, magSize=6, reloadDur=1.5, recoil=60)
 
+# Inherits from Gun class
 class Rifle(Gun):
     def __init__(self, game, holder, target, cooldown):
         self.image = pg.transform.scale(pg.image.load('./assets/rifle.png').convert_alpha(), (52, 14))
@@ -166,6 +190,7 @@ class Rifle(Gun):
         reload_sound = game.pistol_reload
         super().__init__(game, holder, target, cooldown, self.image, sound, reload_sound, magSize=30, reloadDur=1, recoil=15)
 
+# Inherits from Gun class	
 class Shotgun(Gun):
     def __init__(self, game, holder, target, cooldown):
         self.image = pg.transform.scale(pg.image.load('./assets/shotgun.png').convert_alpha(), (44, 16))
@@ -220,10 +245,12 @@ class Bullet(pg.sprite.Sprite):
         self.angle = angle
         self.speed = 20
 
+        # Calculating velocity based on angle
         self.vx = math.cos(self.angle * math.pi/180) * self.speed
         self.vy = math.sin(self.angle * math.pi/180) * self.speed
     
     def update(self):
+        # Move in direction specified in init, constant speed
         self.x += self.vx
         self.y -= self.vy
 
@@ -232,25 +259,31 @@ class Bullet(pg.sprite.Sprite):
 
         self.collide()
 
+    # Handle bullet collisions
     def collide(self):
         hits = pg.sprite.spritecollide(self, self.game.all_sprites, False)
         if hits:
+            # Particle trail
             for _ in range(10):
                 Particle(self.game, self.x, self.y, 10, 60, 360, 1, self.color)
 
+            # If bullet hits mob, kill mob
             if hits[0].__class__.__name__ == "Mob" and not self.shooter.__class__.__name__ == "Mob":
                 hits[0].die()
                 self.kill()
+            # If hit player, reduce health
             elif hits[0].__class__.__name__ == "Player" and self.shooter.__class__.__name__ == "Mob":
                 for _ in range(10):
                     Particle(self.game, self.x, self.y, 20, 120, 360, 1, GREEN)
                 hits[0].hitpoints -= 20
                 print(hits[0].hitpoints)
                 self.kill()
+            # Destroy bullet if hits wall
             elif hits[0].__class__.__name__ == 'Wall':
                 self.kill()
                 for _ in range(10):
                     Particle(self.game, self.x, self.y, 12, 80, 360, 1, YELLOW)
+            # If hit other bullets, destroy both bullets
             elif hits[0].__class__.__name__ == 'Bullet' and hits[0] is not self and hits[0].shooter is not self.shooter:
                 self.kill()
                 hits[0].kill()

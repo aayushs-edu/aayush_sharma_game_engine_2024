@@ -1,11 +1,4 @@
-# This file was created by: Aayush Sharma
-'''
-enemies that follow player(could have shooting capability) - goal: kill enemy, rule: don't die to it
-projectiles(guns/bullets) - verb, freedom, goal: shoot enemy
-lootbox -> powerups/coins - verb: open lootbox, freedom, goal: get items
-'''
-
-# Import modules
+# Importing necessary modules
 import pygame as pg
 from settings import *
 from random import randint
@@ -13,7 +6,6 @@ from sprites import *
 from camera import *
 import sys
 import os
-
 
 # Creating the game class
 class Game:
@@ -29,7 +21,9 @@ class Game:
         self.clock = pg.time.Clock()
         self.load_data()
 
+    # Method to load game data
     def load_data(self):
+        # Getting file paths
         game_folder = os.path.dirname(__file__)
         asset_folder = os.path.join(game_folder, 'assets')
         self.map_data = []
@@ -39,7 +33,7 @@ class Game:
         self.bulletTrans = self.bulletOverlay.copy()
         self.bulletTrans.fill((255, 255, 255, 60), special_flags=pg.BLEND_RGBA_MULT)
 
-        # Sounds
+        # Loading sounds
         self.soundDir = os.path.join(asset_folder, 'sounds')
         self.gun_cock = pg.mixer.Sound(os.path.join(self.soundDir, 'gun-cock.ogg'))
         self.pistol_shot = pg.mixer.Sound(os.path.join(self.soundDir, 'pistol.ogg'))
@@ -49,29 +43,19 @@ class Game:
         self.pistol_reload = pg.mixer.Sound(os.path.join(self.soundDir, 'pistol-reload.ogg'))
         self.shotgun_reload = pg.mixer.Sound(os.path.join(self.soundDir, 'shotgun-reload.ogg'))
         self.music = pg.mixer.music.load(os.path.join(self.soundDir, 'music1.ogg'))
-        # 'r'     open for reading (default)
-        # 'w'     open for writing, truncating the file first
-        # 'x'     open for exclusive creation, failing if the file already exists
-        # 'a'     open for writing, appending to the end of the file if it exists
-        # 'b'     binary mode
-        # 't'     text mode (default)
-        # '+'     open a disk file for updating (reading and writing)
-        # 'U'     universal newlines mode (deprecated)
-        # below opens file for reading in text mode
-        # with 
-        '''
-        The with statement is a context manager in Python. 
-        It is used to ensure that a resource is properly closed or released 
-        after it is used. This can help to prevent errors and leaks.
-        '''
+        
+        # Reading map data from file
         with open(os.path.join(game_folder, 'map.txt'), 'r') as f:
             for line in f:
-                print(line)
                 self.map_data.append(line)
     
+    # Method to initialize a new game
     def new(self):
+        # Playing background music
         pg.mixer.music.play(-1)
+        # Creating sprite groups
         self.all_sprites = pg.sprite.Group()
+        self.active_sprites = pg.sprite.Group()
         self.walls = pg.sprite.Group()
         self.coins = pg.sprite.Group()
         self.mobs = pg.sprite.Group()
@@ -81,13 +65,10 @@ class Game:
         self.particles = pg.sprite.Group()
         self.player = pg.sprite.Group()
         self.cameras = pg.sprite.Group()
-        self.active_sprites = pg.sprite.Group()
+        # Iterating over map data to create game objects
         for row, tiles in enumerate(self.map_data):
-            print(row)
             for col, tile in enumerate(tiles):
-                print(col)
                 if tile == '1':
-                    print("a wall at", row, col)
                     Wall(self, col, row)
                 if tile == 'P':
                     self.player1 = Player(self, col, row)
@@ -100,15 +81,14 @@ class Game:
                     Health(self, col, row, 0)
                 if tile == 'M':
                     Mob(self, self.player1, col, row)
-                    pass
                 if tile == 'L':
                     Lootbox(self, col, row)
+    
+    # Method to draw game elements
     def draw(self):
         self.screen.fill(BGCOLOR)
         self.draw_grid()
-        # self.camera.custom_draw()
         self.camera.custom_draw(self.player1)
-        # self.all_sprites.draw(self.screen)
         self.draw_text(self.screen, "Coins " + str(self.player1.moneybag), 24, WHITE, WIDTH/2 - 32, 2)
         self.drawWeaponOverlay()
         self.drawAmmoOverlay()
@@ -116,6 +96,7 @@ class Game:
         pg.display.update()
         pg.display.flip()
 
+    # Method to draw weapon overlays
     def drawWeaponOverlay(self):
         for i, weapon in enumerate(self.player1.loadout):
             box = pg.draw.rect(self.screen, GREEN if weapon.enabled else LIGHTGRAY, (20 + 80*i, HEIGHT - 80, 60, 60), 3)
@@ -123,6 +104,7 @@ class Game:
             img_rect = img.get_rect(center=box.center)
             self.screen.blit(img, img_rect)
 
+    # Method to draw ammo overlays
     def drawAmmoOverlay(self):
         weapon = self.player1.activeWeapon
         if weapon.reloading:
@@ -137,13 +119,12 @@ class Game:
                     img = self.bulletOverlay.copy()
                     self.screen.blit(img, curr_rect)
             
-            
-    
+    # Method to draw health bar
     def drawHealthBar(self):
         pg.draw.rect(self.screen, SOFTGRAY, pg.Rect(30, 30, 100, 20))
         pg.draw.rect(self.screen, RED, pg.Rect(30, 30, self.player1.hitpoints, 20))
 
-    # Runs our game
+    # Method to run the game
     def run(self):
         # Game loop while playing
         self.playing = True
@@ -153,18 +134,19 @@ class Game:
             self.update()
             self.draw()
 
+    # Method to quit the game
     def quit(self):
         pg.quit()
         sys.exit()
 
+    # Method to update game state
     def update(self):
         # Update sprites
         self.all_sprites.update()
-        # self.camera_group.update()
-        # self.camera_group.custom_draw(self.player1)
         if len(self.particles.sprites()) > 100:
             self.particles.remove(self.particles.sprites()[100:])
 
+    # Method to draw grid lines
     def draw_grid(self):
         # Vertical lines
         for x in range(0, WIDTH, TILESIZE):
@@ -173,6 +155,7 @@ class Game:
         for y in range(0, WIDTH, TILESIZE):
             pg.draw.line(self.screen, LIGHTGRAY, (0, y), (WIDTH, y))    
 
+    # Method to draw text on screen
     def draw_text(self, surface, text, size, color, x, y):
         font_name = pg.font.match_font('arial')
         font = pg.font.Font(font_name, size)
@@ -181,7 +164,9 @@ class Game:
         text_rect.topleft = (x,y)
         surface.blit(text_surface, text_rect)
 
+    # Method to handle events
     def events(self):
+        # Loop
         # Loop through pygame events
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -203,12 +188,14 @@ class Game:
             #         case pg.K_w | pg.K_UP:
             #             self.player1.move(dy=-1)
                 
+    # Method to show the start screen
     def show_start_screen(self):
         self.screen.fill(BGCOLOR)
         self.draw_text(self.screen, 'Top Down Shooter', 24, WHITE, WIDTH/2 - 32, 2)
         pg.display.flip()
         self.wait_for_key()
 
+    # Method to wait for a key press
     def wait_for_key(self):
         waiting = True
         while waiting:

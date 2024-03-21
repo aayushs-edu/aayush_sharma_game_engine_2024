@@ -115,6 +115,7 @@ class Player(pg.sprite.Sprite):
                     self.powerups.remove(p)
         else: self.powered_up = False
 
+        # Handle dashing
         if self.dashing:
             pg.display.flip()
             Particle(self.game, self.x, self.y, TILESIZE, 10, 0, 1, YELLOW if self.powered_up else GREEN)
@@ -125,6 +126,7 @@ class Player(pg.sprite.Sprite):
         else:
             self.dashCoolLeft -= self.game.dt
 
+        # Visual indication of powerup
         if self.powered_up:
             self.image.fill(YELLOW)
         else:
@@ -153,9 +155,11 @@ class Player(pg.sprite.Sprite):
         keys = pg.key.get_pressed()
         if clicks[0]:
             self.activeWeapon.shoot(ORANGE)
+        # Drop weapon
         if keys[pg.K_q]:
             if self.activeWeapon in self.loadout: self.loadout.remove(self.activeWeapon)
             self.activeWeapon.dead=True
+        # Pickup weapon
         if keys[pg.K_z] and self.pickupWeapon and len(self.loadout) < 5:
             self.activeWeapon.enabled = False
             self.pickupWeapon.dead = False
@@ -165,14 +169,17 @@ class Player(pg.sprite.Sprite):
             self.loadout.append(self.pickupWeapon)
             self.activeWeapon = self.loadout[-1]
             self.pickupWeapon = None
+        # Spawn mobs
         if keys[pg.K_r]:
             Mob(self.game, self, 3, 3)
             print('Spawned mob')
+        # Dash
         if keys[pg.K_SPACE] and not self.dashing and self.dashCoolLeft <= 0:
             print('DASH')
             self.dashing = True
             self.dashCoolLeft = self.dashCooldown
         if keys[pg.K_LEFT] or keys[pg.K_a]:
+            # Make speed faster when dashing
             self.vx = -self.speed * (self.dashing*2 + 1)
         if keys[pg.K_RIGHT] or keys[pg.K_d]:
             self.vx = self.speed * (self.dashing*2 + 1)
@@ -180,6 +187,8 @@ class Player(pg.sprite.Sprite):
             self.vy = -self.speed * (self.dashing*2 + 1)
         if keys[pg.K_DOWN] or keys[pg.K_s]:
             self.vy = self.speed * (self.dashing*2 + 1)
+
+        # SWITCH WEAPONS -- number buttons map to weapons
         for key in loadoutButtons:
             idx = loadoutButtons.index(key)
             if keys[key] and idx < len(self.loadout):
@@ -227,6 +236,7 @@ class Coin(pg.sprite.Sprite):
         # Set dimensions 
         self.frame = 0
         self.frameDelay = 0.1
+        # Coin frames
         self.coin_images = os.listdir('./assets/coin/')
         self.image = pg.transform.scale(pg.image.load(f'./assets/coin/{self.coin_images[0]}'), (TILESIZE, TILESIZE))
         # Rectangular area of wall
@@ -238,13 +248,16 @@ class Coin(pg.sprite.Sprite):
         self.collectable = False
     
     def update(self):
+        # ANIMATION -- loop through frames
         if self.frameDelay <= 0:
             self.frame = (self.frame + 1) % 5
             self.image = pg.transform.scale(pg.image.load(f'./assets/coin/{self.coin_images[self.frame]}'), (TILESIZE, TILESIZE))
             self.frameDelay = 0.1
+        # For lootbox -- only make collectable when it goes to intended spot
         if (self.rect.x, self.rect.y) != (self.x, self.y):
                 self.rect.x += (self.x - self.rect.x) * (1 if self.collectable else 0.2)
                 self.rect.y += (self.y - self.rect.y) * (1 if self.collectable else 0.2)
+        # Delay for collectability
         self.delay = max(0, self.delay - self.game.dt)
         if self.delay <= 0:
             self.collectable = True
@@ -273,9 +286,11 @@ class PowerUp(pg.sprite.Sprite):
     def update(self):
         if self.enabled:
             self.dur -= self.game.dt
+        # For lootbox -- only make collectable when it goes to intended spot
         if (self.rect.x, self.rect.y) != (self.x, self.y):
                 self.rect.x += (self.x - self.rect.x) * (1 if self.collectable else 0.2)
                 self.rect.y += (self.y - self.rect.y) * (1 if self.collectable else 0.2)
+        # Delay for collectability
         self.delay = max(0, self.delay - self.game.dt)
         if self.delay <= 0:
             self.collectable = True
@@ -292,14 +307,17 @@ class Speed(PowerUp):
         self.image = pg.transform.scale(pg.image.load('./assets/lightning.png'), (TILESIZE, TILESIZE))
         super().__init__(game, x, y, delay, 5, self.image)
 
+    # Effect of powerup
     def effect(self):
         self.game.player1.speed += 100
     
+    # DIsable powerup
     def disable(self):
         print('done')
         self.game.player1.speed -= 100
         self.kill()
 
+# Inherits from PowerUp
 class Health(PowerUp):
     def __init__(self, game, x, y, delay):
         
@@ -309,6 +327,7 @@ class Health(PowerUp):
 
     def effect(self):
         print('HEALTH')
+        # Give player 20 health, max 100
         self.game.player1.hitpoints = min(100, self.game.player1.hitpoints + 20)
         self.kill()
         
@@ -337,6 +356,7 @@ class Mob(pg.sprite.Sprite):
         self.weapon.enabled = True
 
     def update(self):
+        # Move toward player
         self.vx, self.vy = (Vector2(self.target.rect.center) - Vector2(self.x, self.y)) / TILESIZE * self.speed
         
         self.x += self.vx * self.game.dt
@@ -346,6 +366,7 @@ class Mob(pg.sprite.Sprite):
         self.rect.y = self.y
         self.collide_with_walls('y')
 
+        # Shoot at player
         self.weapon.shoot(REDORANGE)
 
     def collide_with_walls(self, dir):
@@ -392,10 +413,12 @@ class Lootbox(pg.sprite.Sprite):
         self.alpha = 255
         self.fading = False
 
+        # Possible items
         self.items = ['Coin', 'PowerUp', 'Health']
 
     # Input parameter is whether the user is pressing E or not (True or False)
     def checkNearby(self):
+        # Check if player is in proximity
         hits = pg.sprite.spritecollide(self, self.game.player, False)
         if hits:
             keys = pg.key.get_pressed()
@@ -413,10 +436,13 @@ class Lootbox(pg.sprite.Sprite):
             self.kill()  
 
     def open(self):
-        items = rand.choices(self.items, k=3)
+        # Choose random items
+        items = rand.choices(self.items, k=2)
         print(items)
         for item in items:
+            # Throw item in random direction
             vec = pg.Vector2(TILESIZE, TILESIZE).rotate(rand.random() * 360)
+            # Instantiate item based on choice
             if item == 'Coin': 
                 coin = Coin(self.game, self.x, self.y, 1)      
                 coin.x += vec[0]
