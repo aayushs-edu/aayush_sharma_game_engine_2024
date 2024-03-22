@@ -25,6 +25,7 @@ class Player(pg.sprite.Sprite):
         self.image = pg.Surface((TILESIZE, TILESIZE))
         # Give color
         self.image.fill(GREEN)
+        self.color = GREEN
         # Rectangular area of player
         self.rect = self.image.get_rect()
 
@@ -329,69 +330,6 @@ class Health(PowerUp):
         print('HEALTH')
         # Give player 20 health, max 100
         self.game.player1.hitpoints = min(100, self.game.player1.hitpoints + 20)
-        self.kill()
-        
-
-class Mob(pg.sprite.Sprite):
-    def __init__(self, game, target, x, y):
-        self.groups = game.all_sprites, game.mobs, game.active_sprites
-        # init superclass
-        pg.sprite.Sprite.__init__(self, self.groups)
-        # set game class
-        self.game = game
-        self.target = target
-        # Set dimensions 
-        self.image = pg.Surface((TILESIZE, TILESIZE))
-        # Give color
-        self.image.fill(RED)
-        # Rectangular area of wall
-        self.vx, self.vy = 0, 0
-        self.x = x * TILESIZE
-        self.y = y * TILESIZE
-        self.rect = self.image.get_rect(center=(self.x, self.y))
-
-        self.speed = 5
-
-        self.weapon = rand.choices([Pistol(self.game, self, self.target.rect, MOB_COOLDOWN), Shotgun(self.game, self, self.target.rect, MOB_COOLDOWN)], k=1, weights=[3, 1])[0]
-        self.weapon.enabled = True
-
-    def update(self):
-        # Move toward player
-        self.vx, self.vy = (Vector2(self.target.rect.center) - Vector2(self.x, self.y)) / TILESIZE * self.speed
-        
-        self.x += self.vx * self.game.dt
-        self.y += self.vy * self.game.dt
-        self.rect.x = self.x
-        self.collide_with_walls('x')
-        self.rect.y = self.y
-        self.collide_with_walls('y')
-
-        # Shoot at player
-        self.weapon.shoot(REDORANGE)
-
-    def collide_with_walls(self, dir):
-        if dir == 'x':
-            hits = pg.sprite.spritecollide(self, self.game.walls, False)
-            if hits:
-                if self.vx > 0:
-                    self.x = hits[0].rect.left - self.rect.width
-                if self.vx < 0:
-                    self.x = hits[0].rect.right
-                self.vx = 0
-                self.rect.x = self.x
-        if dir == 'y':
-            hits = pg.sprite.spritecollide(self, self.game.walls, False)
-            if hits:
-                if self.vy > 0:
-                    self.y = hits[0].rect.top - self.rect.height
-                if self.vy < 0:
-                    self.y = hits[0].rect.bottom
-                self.vy = 0
-                self.rect.y = self.y
-    def die(self):
-        for _ in range(20):
-            Particle(self.game, self.x, self.y, 20, 120, 360, 2, RED)
-        self.weapon.dead = True
         self.kill()
                 
 class Lootbox(pg.sprite.Sprite):

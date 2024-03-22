@@ -3,6 +3,7 @@ import pygame as pg
 from settings import *
 from random import randint
 from sprites import *
+from mobs import *
 from camera import *
 import sys
 import os
@@ -80,7 +81,9 @@ class Game:
                 if tile == 'H':
                     Health(self, col, row, 0)
                 if tile == 'M':
-                    Mob(self, self.player1, col, row)
+                    Troop(self, self.player1, col, row)
+                if tile == 'S':
+                    Sentinel(self, self.player1, col, row)
                 if tile == 'L':
                     Lootbox(self, col, row)
     

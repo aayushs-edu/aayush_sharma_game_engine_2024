@@ -20,7 +20,7 @@ def rotate_point_on_pivot(angle, pivot, origin):
     return new_pt
 
 class Gun(pg.sprite.Sprite):
-    def __init__(self, game, holder, target, cooldown, img, sound, reload_sound, magSize, reloadDur, recoil):
+    def __init__(self, game, holder, target, cooldown, img, sound, reload_sound, magSize, reloadDur, recoil, damage):
         # Define sprite groups
         self.groups = game.all_sprites, game.guns, game.active_sprites
         self.game = game
@@ -51,6 +51,7 @@ class Gun(pg.sprite.Sprite):
         self.reloading = False
         self.reloadDur = reloadDur
         self.reloadTimeLeft = self.reloadDur
+        self.damage = damage
         
         # Set other attributes
         self.enabled = False
@@ -113,7 +114,7 @@ class Gun(pg.sprite.Sprite):
 
     def rotate(self, target):
         # Calculate difference vector between holder and target
-        if self.holder.__class__.__name__ == 'Mob':
+        if self.holder.__class__.__bases__[0].__name__ == 'Mob':
             offset = Vector2(self.target.center) - Vector2(self.pos)
         else:
             offset = Vector2(target) - (WIDTH // 2, HEIGHT // 2)
@@ -145,7 +146,7 @@ class Gun(pg.sprite.Sprite):
         # Fire bullet if conditions allow -- not cooling down, not reloading
         if self.cool_dur <= 0 and not self.reloading:
             # Instantiate bullets
-            Bullet(self.game, *self.shooting_point, self.angle, self.holder, color)
+            Bullet(self.game, *self.shooting_point, self.angle, self.holder, color, self.damage)
             
             # Particle trail
             pDir = -1 if self.flipped else 1
@@ -180,7 +181,7 @@ class Pistol(Gun):
         self.image = pg.transform.scale(pg.image.load('./assets/pistol.png').convert_alpha(), (35, 25))
         sound = game.pistol_shot
         reload_sound = game.pistol_reload
-        super().__init__(game, holder, target, cooldown, self.image, sound, reload_sound, magSize=6, reloadDur=1.5, recoil=60)
+        super().__init__(game, holder, target, cooldown, self.image, sound, reload_sound, magSize=6, reloadDur=1.5, recoil=60, damage=20)
 
 # Inherits from Gun class
 class Rifle(Gun):
@@ -188,7 +189,7 @@ class Rifle(Gun):
         self.image = pg.transform.scale(pg.image.load('./assets/rifle.png').convert_alpha(), (52, 14))
         sound = game.pistol_shot
         reload_sound = game.pistol_reload
-        super().__init__(game, holder, target, cooldown, self.image, sound, reload_sound, magSize=30, reloadDur=1, recoil=15)
+        super().__init__(game, holder, target, cooldown, self.image, sound, reload_sound, magSize=30, reloadDur=1, recoil=15, damage=10)
 
 # Inherits from Gun class	
 class Shotgun(Gun):
@@ -196,17 +197,17 @@ class Shotgun(Gun):
         self.image = pg.transform.scale(pg.image.load('./assets/shotgun.png').convert_alpha(), (44, 16))
         sound = game.shotgun_shot
         reload_sound = game.shotgun_reload
-        super().__init__(game, holder, target, cooldown, self.image, sound, reload_sound, magSize=3, reloadDur=3, recoil=120)
+        super().__init__(game, holder, target, cooldown, self.image, sound, reload_sound, magSize=3, reloadDur=3, recoil=120, damage=50)
     
     def shoot(self, color):
         if self.cool_dur <= 0 and not self.reloading:
             for angle in np.random.normal(loc=self.angle, scale=10.0, size=5):
-                Bullet(self.game, *self.shooting_point, angle, self.holder, color) 
+                Bullet(self.game, *self.shooting_point, angle, self.holder, color, self.damage) 
 
             self.shotsLeft -= 1
             if self.shotsLeft <= 0:
                 self.reloading = True
-                if not self.holder.__class__.__name__ == 'Mob':
+                if not self.holder.__class__.__bases__[0].__name__ == 'Mob':
                     pg.mixer.Sound.play(self.reload_sound)
 
             pDir = -1 if self.flipped else 1
@@ -224,7 +225,7 @@ class Shotgun(Gun):
 
 # Bullet Sprites
 class Bullet(pg.sprite.Sprite):
-    def __init__(self, game, x, y, angle, shooter, color):
+    def __init__(self, game, x, y, angle, shooter, color, damage):
         self.groups = game.all_sprites, game.bullets, game.active_sprites
         # init superclass
         pg.sprite.Sprite.__init__(self, self.groups)
@@ -244,6 +245,7 @@ class Bullet(pg.sprite.Sprite):
 
         self.angle = angle
         self.speed = 20
+        self.damage = damage
 
         # Calculating velocity based on angle
         self.vx = math.cos(self.angle * math.pi/180) * self.speed
@@ -268,14 +270,10 @@ class Bullet(pg.sprite.Sprite):
                 Particle(self.game, self.x, self.y, 10, 60, 360, 1, self.color)
 
             # If bullet hits mob, kill mob
-            if hits[0].__class__.__name__ == "Mob" and not self.shooter.__class__.__name__ == "Mob":
-                hits[0].die()
-                self.kill()
-            # If hit player, reduce health
-            elif hits[0].__class__.__name__ == "Player" and self.shooter.__class__.__name__ == "Mob":
+            if hits[0].__class__.__bases__[0].__name__ == 'Mob' or hits[0].__class__.__name__ == 'Player':
                 for _ in range(10):
-                    Particle(self.game, self.x, self.y, 20, 120, 360, 1, GREEN)
-                hits[0].hitpoints -= 20
+                    Particle(self.game, self.x, self.y, 20, 120, 360, 1, hits[0].color)
+                hits[0].hitpoints -= self.damage
                 print(hits[0].hitpoints)
                 self.kill()
             # Destroy bullet if hits wall
