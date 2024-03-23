@@ -10,6 +10,7 @@ import os
 from weapons import *
 from particles import *
 
+# List of buttons to switch weapons
 loadoutButtons = [pg.K_1, pg.K_2, pg.K_3, pg.K_4, pg.K_5]
 
 # Player Sprite -- inherits from pygame Sprite class
@@ -41,6 +42,7 @@ class Player(pg.sprite.Sprite):
         self.y = y * TILESIZE
 
         self.moneybag = 0
+        # Loadout as a list of weapons
         self.loadout : list[Gun] = [Pistol(self.game, self, 'Mouse', PISTOL_COOLDOWN), Shotgun(self.game, self, 'Mouse', SHOTGUN_COOLDOWN), Rifle(self.game, self, 'Mouse', RIFLE_COOLDOWN)]
         self.activeWeapon = self.loadout[0]
         self.activeWeapon.enabled = True
@@ -59,7 +61,8 @@ class Player(pg.sprite.Sprite):
     #         if wall.x == self.x + dx and wall.y == self.y + dy:
     #             return True
     #     return False
-        
+    
+    # Function to handle collision with walls
     def collide_with_walls(self, dir):
         if dir == 'x':
             hits = pg.sprite.spritecollide(self, self.game.walls, False)
