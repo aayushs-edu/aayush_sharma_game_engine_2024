@@ -38,14 +38,19 @@ class Game:
         # Loading sounds
         self.soundDir = os.path.join(asset_folder, 'sounds')
         self.gun_cock = pg.mixer.Sound(os.path.join(self.soundDir, 'gun-cock.ogg'))
+        self.gun_cock.set_volume(0.5)
         self.pistol_shot = pg.mixer.Sound(os.path.join(self.soundDir, 'pistol.ogg'))
-        self.pistol_shot.set_volume(0.5)
+        self.pistol_shot.set_volume(0.1)
         self.shotgun_shot = pg.mixer.Sound(os.path.join(self.soundDir, 'shotgun.ogg'))
-        self.shotgun_shot.set_volume(0.5)
+        self.shotgun_shot.set_volume(0.1)
+        self.sniper_shot = pg.mixer.Sound(os.path.join(self.soundDir, 'sniper.ogg'))
+        self.sniper_shot.set_volume(0.1)
         self.pistol_reload = pg.mixer.Sound(os.path.join(self.soundDir, 'pistol-reload.ogg'))
+        self.pistol_reload.set_volume(0.1)
         self.shotgun_reload = pg.mixer.Sound(os.path.join(self.soundDir, 'shotgun-reload.ogg'))
-        self.music = pg.mixer.music.load(os.path.join(self.soundDir, 'music1.ogg'))
-        
+        self.shotgun_reload.set_volume(0.1)
+        self.music = pg.mixer.music.load(os.path.join(self.soundDir, 'music4.mp3'))
+        pg.mixer.music.set_volume(0.2)
         # Reading map data from file
         with open(os.path.join(game_folder, 'map.txt'), 'r') as f:
             for line in f:
@@ -55,6 +60,7 @@ class Game:
     def new(self):
         # Playing background music
         pg.mixer.music.play(-1)
+        
         # Creating sprite groups
         self.all_sprites = pg.sprite.Group()
         self.active_sprites = pg.sprite.Group()
@@ -83,8 +89,10 @@ class Game:
                     Health(self, col, row, 0)
                 if tile == 'M':
                     Troop(self, self.player1, col, row)
+                    pass
                 if tile == 'S':
                     Sentinel(self, self.player1, col, row)
+                    pass
                 if tile == 'L':
                     Lootbox(self, col, row)
     
@@ -96,7 +104,7 @@ class Game:
         self.draw_text(self.screen, "Coins " + str(self.player1.moneybag), 'space.ttf', 24, WHITE, WIDTH/2 - 32, 2)
         self.drawWeaponOverlay()
         self.drawAmmoOverlay()
-        self.drawHealthBar()
+        self.drawHealthBars()
         pg.display.update()
         pg.display.flip()
 
@@ -124,9 +132,16 @@ class Game:
                     self.screen.blit(img, curr_rect)
             
     # Method to draw health bar
-    def drawHealthBar(self):
+    def drawHealthBars(self):
+        # Player
         pg.draw.rect(self.screen, SOFTGRAY, pg.Rect(30, 30, 100, 20))
-        pg.draw.rect(self.screen, RED, pg.Rect(30, 30, self.player1.hitpoints, 20))
+        pg.draw.rect(self.screen, RED, pg.Rect(30, 30, self.player1.hitpoints/self.player1.max_hitpoints*100, 20))
+
+        # Miobs
+        for mob in self.mobs.sprites():
+            
+            pg.draw.rect(self.screen, SOFTGRAY, pg.Rect(*Vector2(mob.rect.left, mob.rect.bottom+8) - self.camera.offset, TILESIZE, 5))
+            pg.draw.rect(self.screen, RED, pg.Rect(*Vector2(mob.rect.left, mob.rect.bottom+8) - self.camera.offset, mob.hitpoints/mob.max_hitpoints*TILESIZE, 5))
 
     # Method to run the game
     def run(self):
