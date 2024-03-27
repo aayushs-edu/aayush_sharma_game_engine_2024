@@ -9,6 +9,7 @@ import random as rand
 import os
 from weapons import *
 from particles import *
+from mobs import *
 
 # List of buttons to switch weapons
 loadoutButtons = [pg.K_1, pg.K_2, pg.K_3, pg.K_4, pg.K_5]
@@ -31,7 +32,8 @@ class Player(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
 
         self.speed = 300
-        self.hitpoints = 100
+        self.max_hitpoints = 100000000000
+        self.hitpoints = self.max_hitpoints
         self.dashing = False
         self.dashLeft = 0.1
         self.dashCooldown = 1
@@ -43,12 +45,19 @@ class Player(pg.sprite.Sprite):
 
         self.moneybag = 0
         # Loadout as a list of weapons
-        self.loadout : list[Gun] = [Pistol(self.game, self, 'Mouse', PISTOL_COOLDOWN), Shotgun(self.game, self, 'Mouse', SHOTGUN_COOLDOWN), Rifle(self.game, self, 'Mouse', RIFLE_COOLDOWN)]
+        self.loadout : list[Gun] = [
+            Pistol(self.game, self, 'Mouse', PISTOL_COOLDOWN), 
+            Shotgun(self.game, self, 'Mouse', SHOTGUN_COOLDOWN), 
+            Rifle(self.game, self, 'Mouse', RIFLE_COOLDOWN), 
+            Sniper(self.game, self, 'Mouse', SNIPER_COOLDOWN)
+        ]
         self.activeWeapon = self.loadout[0]
         self.activeWeapon.enabled = True
 
         self.powerups = []
         self.powered_up = False
+
+        
 
     # Function to move player
     # def move(self, dx=0, dy=0):
@@ -122,7 +131,7 @@ class Player(pg.sprite.Sprite):
         # Handle dashing
         if self.dashing:
             pg.display.flip()
-            Particle(self.game, self.x, self.y, TILESIZE, 10, 0, 1, YELLOW if self.powered_up else GREEN)
+            Particle(self.game, self.x, self.y, TILESIZE, 0, 0, 0.2, GREEN, randSize=False, decay=False, fade=True)
             self.dashLeft -= self.game.dt
             if self.dashLeft <= 0:
                 self.dashing = False
@@ -133,6 +142,7 @@ class Player(pg.sprite.Sprite):
         # Visual indication of powerup
         if self.powered_up:
             self.image.fill(YELLOW)
+            Particle(self.game, self.x, self.y, TILESIZE, 0, 0, 0.2, YELLOW, randSize=False, decay=False, fade=True)
         else:
             self.image.fill(GREEN)
 
@@ -172,13 +182,14 @@ class Player(pg.sprite.Sprite):
             self.pickupWeapon.cooldown = PISTOL_COOLDOWN
             self.loadout.append(self.pickupWeapon)
             self.activeWeapon = self.loadout[-1]
+            self.activeWeapon.enabled = True
             self.pickupWeapon = None
         # Spawn mobs
         if keys[pg.K_r]:
-            Mob(self.game, self, 3, 3)
+            Troop(self.game, self, 3, 3)
             print('Spawned mob')
         # Dash
-        if keys[pg.K_SPACE] and not self.dashing and self.dashCoolLeft <= 0:
+        if keys[pg.K_SPACE] and not self.dashing and not self.powered_up and self.dashCoolLeft <= 0:
             print('DASH')
             self.dashing = True
             self.dashCoolLeft = self.dashCooldown

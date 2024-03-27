@@ -6,7 +6,7 @@ from weapons import *
 # Mob Sprite -- inherits from pygame Sprite class
 class Mob(pg.sprite.Sprite):
     # Initialize the Mob
-    def __init__(self, game, target, x, y, weapon, hitpoints, color, speed):
+    def __init__(self, game, target, x, y, weapon, hitpoints, color, speed, range):
         # Define the groups this sprite belongs to
         self.groups = game.all_sprites, game.mobs, game.active_sprites
         # Initialize the superclass
@@ -28,6 +28,7 @@ class Mob(pg.sprite.Sprite):
 
         # Set initial properties
         self.speed = speed
+        self.max_hitpoints = hitpoints
         self.hitpoints = hitpoints
         # Assign weapon based on input
         match weapon:
@@ -39,23 +40,35 @@ class Mob(pg.sprite.Sprite):
                 self.weapon = Rifle(self.game, self, self.target.rect, MOB_COOLDOWN)
         self.weapon.enabled = True
 
+        self.range = range
+        self.target_in_range = False
+
+    def check_range(self):
+        dist_to_player = Vector2(self.target.rect.center).distance_to(Vector2(self.x, self.y))
+        self.target_in_range = dist_to_player < self.range
+
     # Update the sprite each frame
     def update(self):
-        # Move toward player
-        self.vx, self.vy = (Vector2(self.target.rect.center) - Vector2(self.x, self.y)) / TILESIZE * self.speed
-        
-        # Update position based on velocity
-        self.x += self.vx * self.game.dt
-        self.y += self.vy * self.game.dt
-        self.rect.x = self.x
-        # Check for collision
-        self.collide_with_walls('x')
-        self.rect.y = self.y
-        # Check for collision
-        self.collide_with_walls('y')
+        self.check_range()
+        if self.target_in_range:
+            # Move toward player
+            self.vx, self.vy = (Vector2(self.target.rect.center) - Vector2(self.x, self.y)) / TILESIZE * self.speed
+            
+            # Update position based on velocity
+            self.x += self.vx * self.game.dt
+            self.y += self.vy * self.game.dt
+            self.rect.x = self.x
+            # Check for collision
+            self.collide_with_walls('x')
+            self.rect.y = self.y
+            # Check for collision
+            self.collide_with_walls('y')
 
-        # Shoot at player
-        self.weapon.shoot(REDORANGE)
+            # Shoot at player
+            self.weapon.enabled = True
+            self.weapon.shoot(REDORANGE)
+        else:
+            self.weapon.enabled = False
         # Check for death
         if self.hitpoints <= 0:
             self.weapon.dead = True
@@ -104,9 +117,9 @@ class Mob(pg.sprite.Sprite):
 class Troop(Mob):
     def __init__(self, game, target, x, y):
         weapon = 'Pistol'
-        super().__init__(game, target, x, y, weapon, hitpoints=30, color=RED, speed=5)
+        super().__init__(game, target, x, y, weapon, hitpoints=30, color=RED, speed=5, range=500)
 
 class Sentinel(Mob):
     def __init__(self, game, target, x, y):
         weapon = 'Shotgun'
-        super().__init__(game, target, x, y, weapon, hitpoints=100, color=BLUE, speed=8)
+        super().__init__(game, target, x, y, weapon, hitpoints=100, color=BLUE, speed=8, range=500)

@@ -20,7 +20,7 @@ def rotate_point_on_pivot(angle, pivot, origin):
     return new_pt
 
 class Gun(pg.sprite.Sprite):
-    def __init__(self, game, holder, target, cooldown, img, sound, reload_sound, magSize, reloadDur, recoil, damage):
+    def __init__(self, game, holder, target, cooldown, img, sound, reload_sound, magSize, reloadDur, recoil, damage, bullet_speed=20, knockback=0):
         # Define sprite groups
         self.groups = game.all_sprites, game.guns, game.active_sprites
         self.game = game
@@ -52,6 +52,8 @@ class Gun(pg.sprite.Sprite):
         self.reloadDur = reloadDur
         self.reloadTimeLeft = self.reloadDur
         self.damage = damage
+        self.bullet_speed = bullet_speed
+        self.knockback = knockback
         
         # Set other attributes
         self.enabled = False
@@ -146,7 +148,7 @@ class Gun(pg.sprite.Sprite):
         # Fire bullet if conditions allow -- not cooling down, not reloading
         if self.cool_dur <= 0 and not self.reloading:
             # Instantiate bullets
-            Bullet(self.game, *self.shooting_point, self.angle, self.holder, color, self.damage)
+            Bullet(self.game, *self.shooting_point, self.angle, self.holder, color, self.damage, speed=self.bullet_speed)
             
             # Particle trail
             pDir = -1 if self.flipped else 1
@@ -166,6 +168,10 @@ class Gun(pg.sprite.Sprite):
 
             # Apply recoil
             self.angle += (-self.recoil if self.flipped else self.recoil)
+
+            knockback_angle = math.atan2(pg.mouse.get_pos()[1] - self.holder.rect.centery, pg.mouse.get_pos()[0] - self.holder.rect.centerx)
+            self.holder.vx += self.knockback * TILESIZE * math.cos(knockback_angle)
+            self.holder.vy += self.knockback * TILESIZE * math.sin(knockback_angle)
     
     def fade(self):
         # Fade out the gun sprite
@@ -181,7 +187,7 @@ class Pistol(Gun):
         self.image = pg.transform.scale(pg.image.load('./assets/pistol.png').convert_alpha(), (35, 25))
         sound = game.pistol_shot
         reload_sound = game.pistol_reload
-        super().__init__(game, holder, target, cooldown, self.image, sound, reload_sound, magSize=6, reloadDur=1.5, recoil=60, damage=20)
+        super().__init__(game, holder, target, cooldown, self.image, sound, reload_sound, magSize=6, reloadDur=1.5, recoil=60, damage=20, knockback=3)
 
 # Inherits from Gun class
 class Rifle(Gun):
@@ -189,7 +195,15 @@ class Rifle(Gun):
         self.image = pg.transform.scale(pg.image.load('./assets/rifle.png').convert_alpha(), (52, 14))
         sound = game.pistol_shot
         reload_sound = game.pistol_reload
-        super().__init__(game, holder, target, cooldown, self.image, sound, reload_sound, magSize=30, reloadDur=1, recoil=15, damage=10)
+        super().__init__(game, holder, target, cooldown, self.image, sound, reload_sound, magSize=30, reloadDur=1, recoil=15, damage=10, knockback=7)
+
+# Inherits from Gun class
+class Sniper(Gun):
+    def __init__(self, game, holder, target, cooldown):
+        self.image = pg.transform.scale(pg.image.load('./assets/sniper.png').convert_alpha(), (65, 21))
+        sound = game.sniper_shot
+        reload_sound = game.shotgun_reload
+        super().__init__(game, holder, target, cooldown, self.image, sound, reload_sound, magSize=4, reloadDur=4, recoil=100, damage=100, bullet_speed=50, knockback=15)
 
 # Inherits from Gun class	
 class Shotgun(Gun):
@@ -197,7 +211,7 @@ class Shotgun(Gun):
         self.image = pg.transform.scale(pg.image.load('./assets/shotgun.png').convert_alpha(), (44, 16))
         sound = game.shotgun_shot
         reload_sound = game.shotgun_reload
-        super().__init__(game, holder, target, cooldown, self.image, sound, reload_sound, magSize=3, reloadDur=3, recoil=120, damage=50)
+        super().__init__(game, holder, target, cooldown, self.image, sound, reload_sound, magSize=10, reloadDur=3, recoil=120, damage=50, knockback=1)
     
     def shoot(self, color):
         if self.cool_dur <= 0 and not self.reloading:
@@ -222,10 +236,19 @@ class Shotgun(Gun):
 
             self.angle += (-self.recoil if self.flipped else self.recoil)
 
+            # Apply recoil
+            self.angle += (-self.recoil if self.flipped else self.recoil)
+
+            knockback_vec = Vector2(self.x, self.y).distance_to(Vector2(pg.mouse.get_pos()) if self.target == 'Mouse' else Vector2(WIDTH//2, HEIGHT//2))
+            
+            # knockback_angle = math.atan2(self.holder.rect.centery - pg.mouse.get_pos()[1] if self.target == 'Mouse' else HEIGHT//2, self.holder.rect.centerx - pg.mouse.get_pos()[0] if self.target == 'Mouse' else WIDTH//2)
+            self.holder.vx += self.knockback * TILESIZE * knockback_vec
+            self.holder.vy += self.knockback * TILESIZE * knockback_vec
+
 
 # Bullet Sprites
 class Bullet(pg.sprite.Sprite):
-    def __init__(self, game, x, y, angle, shooter, color, damage):
+    def __init__(self, game, x, y, angle, shooter, color, damage, speed=20):
         self.groups = game.all_sprites, game.bullets, game.active_sprites
         # init superclass
         pg.sprite.Sprite.__init__(self, self.groups)
@@ -244,7 +267,7 @@ class Bullet(pg.sprite.Sprite):
         self.color = color
 
         self.angle = angle
-        self.speed = 20
+        self.speed = speed
         self.damage = damage
 
         # Calculating velocity based on angle
