@@ -5,6 +5,7 @@ from random import randint
 from sprites import *
 from mobs import *
 from camera import *
+import numpy as np
 import sys
 import os
 
@@ -92,7 +93,7 @@ class Game:
         self.screen.fill(BGCOLOR)
         self.draw_grid()
         self.camera.custom_draw(self.player1)
-        self.draw_text(self.screen, "Coins " + str(self.player1.moneybag), 24, WHITE, WIDTH/2 - 32, 2)
+        self.draw_text(self.screen, "Coins " + str(self.player1.moneybag), 'space.ttf', 24, WHITE, WIDTH/2 - 32, 2)
         self.drawWeaponOverlay()
         self.drawAmmoOverlay()
         self.drawHealthBar()
@@ -159,12 +160,11 @@ class Game:
             pg.draw.line(self.screen, LIGHTGRAY, (0, y), (WIDTH, y))    
 
     # Method to draw text on screen
-    def draw_text(self, surface, text, size, color, x, y):
-        font_name = pg.font.match_font('arial')
-        font = pg.font.Font(font_name, size)
+    def draw_text(self, surface, text, font, size, color, x, y):
+        font = pg.font.Font(f'./assets/{font}', size)
         text_surface = font.render(text, True, color)
         text_rect = text_surface.get_rect()
-        text_rect.topleft = (x,y)
+        text_rect.center = (x,y)
         surface.blit(text_surface, text_rect)
 
     # Method to handle events
@@ -194,21 +194,37 @@ class Game:
     # Method to show the start screen
     def show_start_screen(self):
         self.screen.fill(BGCOLOR)
-        self.draw_text(self.screen, 'Top Down Shooter', 24, WHITE, WIDTH/2 - 32, 2)
-        pg.display.flip()
-        self.wait_for_key()
+        self.draw_text(self.screen, 'Cube wars', 'space.ttf', 24, BLUE, WIDTH/2, HEIGHT/2)
+        self.draw_text(self.screen, 'PLAY', 'Quantum.ttf', 24, WHITE, WIDTH/2, HEIGHT/2 + 50)
+        rot = 0
+        count = 1
+        while True:
+            # Check if player presses key
+            for event in pg.event.get():
+                if event.type == pg.KEYUP:
+                    return
+                if event.type == pg.QUIT:
+                    self.quit()
+            count += 1
+            if count % 1000000 == 0:
+                rot += 20
+                loc2 = Vector2(WIDTH/2, HEIGHT/2) + Vector2(0, 150).rotate(rot)
+                pg.draw.rect(self.screen, WHITE, pg.Rect(loc2.x, loc2.y, 30, 30))
+                pg.display.flip()
+        
 
     # Method to wait for a key press
-    def wait_for_key(self):
-        waiting = True
-        while waiting:
-            self.clock.tick(FPS)
-            for event in pg.event.get():
-                if event.type == pg.QUIT:
-                    waiting = False
-                    self.quit()
-                if event.type == pg.KEYUP:
-                    waiting = False
+    # def wait_for_key(self):
+    #     waiting = True
+    #     while waiting:
+    #         self.clock.tick(FPS)
+    #         for event in pg.event.get():
+    #             if event.type == pg.QUIT:
+    #                 waiting = False
+    #                 self.quit()
+    #             if event.type == pg.KEYUP:
+    #                 waiting = False
+    #     return not waiting
 
 # Create a new game
 g = Game()
