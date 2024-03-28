@@ -30,15 +30,15 @@ class Particle(Sprite):
         self.image.fill(color)
 
         # Setting particle target position
-        self.target = Vector2(self.x, self.y) + Vector2(rand.random()*maxDist, 0).rotate(rand.randint(-maxAngle, maxAngle))
+        self.target = Vector2(self.x, self.y) + Vector2(rand.random()*maxDist*10, 0).rotate(rand.randint(-maxAngle, maxAngle))
         # Setting particle duration
         self.max_dur = dur
-        self.dur = dur
+        self.dur = self.max_dur
 
         # Initializing velocity components
         self.vx, self.vy = 0, 0
         # Setting particle speed
-        self.speed = 5
+        self.speed = 1
 
     # Update method
     def update(self):
@@ -53,15 +53,16 @@ class Particle(Sprite):
             self.vx, self.vy = (self.target - Vector2(self.x, self.y)) * self.speed
             
             # Update particle position
-            self.x += self.vx * self.game.dt
-            self.y += self.vy * self.game.dt
+            print(self.game.slowmo)
+            self.x += self.vx * self.game.dt / 10
+            self.y += self.vy * self.game.dt / 10
             self.rect.x = self.x
             self.rect.y = self.y
 
             # Scale down particle size over time
-            if self.decay:
-                self.image=pg.transform.scale(self.image, (max(0, self.image.get_width()-self.dur/10), 
-                                                        max(0, self.image.get_height()-self.dur/10)))
+            if self.decay and not self.game.slowmo:
+                self.image=pg.transform.scale(self.image, (max(0, self.image.get_width()-self.dur/50), 
+                                                        max(0, self.image.get_height()-self.dur/50)))
         else:
             # Kill the particle if duration is over
             self.kill()

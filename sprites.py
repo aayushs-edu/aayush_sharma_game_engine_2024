@@ -167,6 +167,16 @@ class Player(pg.sprite.Sprite):
         self.vx, self.vy = 0, 0
         clicks = pg.mouse.get_pressed()
         keys = pg.key.get_pressed()
+        if keys[pg.K_x]:
+            self.game.camera.zoom_scale = 1.4
+            if self.game.slowmo: self.game.slowmo = False
+            else:
+                self.game.slowmo = True
+                for sprite in self.game.active_sprites.sprites():
+                    if hasattr(sprite, 'speed'):
+                        sprite.speed /= 2
+        if keys[pg.K_f]:
+            self.game.rot = 5
         if clicks[0]:
             self.activeWeapon.shoot(ORANGE)
         # Drop weapon

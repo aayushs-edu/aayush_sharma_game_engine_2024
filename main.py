@@ -23,6 +23,9 @@ class Game:
         self.clock = pg.time.Clock()
         self.load_data()
 
+        self.rot = 1
+        self.slowmo = False
+
     # Method to load game data
     def load_data(self):
         # Getting file paths
@@ -80,7 +83,7 @@ class Game:
                     Wall(self, col, row)
                 if tile == 'P':
                     self.player1 = Player(self, col, row)
-                    self.camera = Camera(self)
+                    self.camera = CameraGroup(self)
                 if tile == 'C':
                     Coin(self, col, row, 0)
                 if tile == 'U':
@@ -88,10 +91,10 @@ class Game:
                 if tile == 'H':
                     Health(self, col, row, 0)
                 if tile == 'M':
-                    Troop(self, self.player1, col, row)
+                    # Troop(self, self.player1, col, row)
                     pass
                 if tile == 'S':
-                    Sentinel(self, self.player1, col, row)
+                    # Sentinel(self, self.player1, col, row)
                     pass
                 if tile == 'L':
                     Lootbox(self, col, row)
@@ -100,6 +103,7 @@ class Game:
     def draw(self):
         self.screen.fill(BGCOLOR)
         self.draw_grid()
+        self.camera.update()
         self.camera.custom_draw(self.player1)
         self.draw_text(self.screen, "Coins " + str(self.player1.moneybag), 'space.ttf', 24, WHITE, WIDTH/2 - 32, 2)
         self.drawWeaponOverlay()
@@ -162,8 +166,8 @@ class Game:
     def update(self):
         # Update sprites
         self.all_sprites.update()
-        if len(self.particles.sprites()) > 100:
-            self.particles.remove(self.particles.sprites()[100:])
+        while len(self.particles.sprites()) > 1000:
+            self.particles.sprites()[0].kill()
 
     # Method to draw grid lines
     def draw_grid(self):
