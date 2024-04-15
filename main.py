@@ -1,3 +1,5 @@
+# Beta: add boss fight
+
 # Importing necessary modules
 import pygame as pg
 from settings import *
@@ -91,13 +93,15 @@ class Game:
                 if tile == 'H':
                     Health(self, col, row, 0)
                 if tile == 'M':
-                    # Troop(self, self.player1, col, row)
+                    Troop(self, self.player1, col, row)
                     pass
                 if tile == 'S':
-                    # Sentinel(self, self.player1, col, row)
+                    Sentinel(self, self.player1, col, row)
                     pass
                 if tile == 'L':
                     Lootbox(self, col, row)
+                if tile == 'S':
+                    Slowmo(self, col, row, 0)
     
     # Method to draw game elements
     def draw(self):
@@ -105,10 +109,9 @@ class Game:
         self.draw_grid()
         self.camera.update()
         self.camera.custom_draw(self.player1)
-        self.draw_text(self.screen, "Coins " + str(self.player1.moneybag), 'space.ttf', 24, WHITE, WIDTH/2 - 32, 2)
+        self.draw_text(self.screen, "Coins " + str(self.player1.moneybag), 'space.ttf', 24, WHITE, WIDTH/2, 50)
         self.drawWeaponOverlay()
         self.drawAmmoOverlay()
-        self.drawHealthBars()
         pg.display.update()
         pg.display.flip()
 
@@ -134,18 +137,6 @@ class Game:
                 if i < weapon.shotsLeft:
                     img = self.bulletOverlay.copy()
                     self.screen.blit(img, curr_rect)
-            
-    # Method to draw health bar
-    def drawHealthBars(self):
-        # Player
-        pg.draw.rect(self.screen, SOFTGRAY, pg.Rect(30, 30, 100, 20))
-        pg.draw.rect(self.screen, RED, pg.Rect(30, 30, self.player1.hitpoints/self.player1.max_hitpoints*100, 20))
-
-        # Miobs
-        for mob in self.mobs.sprites():
-            
-            pg.draw.rect(self.screen, SOFTGRAY, pg.Rect(*Vector2(mob.rect.left, mob.rect.bottom+8) - self.camera.offset, TILESIZE, 5))
-            pg.draw.rect(self.screen, RED, pg.Rect(*Vector2(mob.rect.left, mob.rect.bottom+8) - self.camera.offset, mob.hitpoints/mob.max_hitpoints*TILESIZE, 5))
 
     # Method to run the game
     def run(self):
@@ -166,7 +157,7 @@ class Game:
     def update(self):
         # Update sprites
         self.all_sprites.update()
-        while len(self.particles.sprites()) > 1000:
+        if len(self.particles.sprites()) > 100:
             self.particles.sprites()[0].kill()
 
     # Method to draw grid lines

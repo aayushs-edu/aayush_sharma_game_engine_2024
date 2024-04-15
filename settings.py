@@ -21,6 +21,7 @@ BLUE = (0, 0, 255)
 RED = (255, 0, 0)
 ORANGE = (255, 165, 0)
 REDORANGE = (235, 102, 75)
+LIGHTBLUE = (66, 224, 245)
 
 # Player settings
 PLAYER_SPEED = 300

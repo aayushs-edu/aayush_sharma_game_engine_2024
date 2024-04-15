@@ -60,6 +60,7 @@ class CameraGroup(pg.sprite.Group):
 
 		# zoom 
 		self.zoom_scale = 1
+		self.curr_zoom = self.zoom_scale
 		self.internal_surf_size = (2500,2500)
 		self.internal_surf = pg.Surface(self.internal_surf_size, pg.SRCALPHA)
 		self.internal_rect = self.internal_surf.get_rect(center = (self.half_w,self.half_h))
@@ -85,9 +86,8 @@ class CameraGroup(pg.sprite.Group):
 
 		self.offset.x = self.camera_rect.left - self.camera_borders['left']
 		self.offset.y = self.camera_rect.top - self.camera_borders['top']
-
-	def custom_draw(self, player):
 		
+	def custom_draw(self, player):
 		self.center_target_camera(player)
 
 		self.internal_surf.fill(BGCOLOR)
@@ -96,8 +96,23 @@ class CameraGroup(pg.sprite.Group):
 		for sprite in self.game.all_sprites.sprites():
 			offset_pos = sprite.rect.topleft - self.offset + self.internal_offset
 			self.internal_surf.blit(sprite.image,offset_pos)
-
-		scaled_surf = pg.transform.scale(self.internal_surf,self.internal_surface_size_vector * self.zoom_scale)
+		
+		if self.curr_zoom != self.zoom_scale:
+			self.curr_zoom += (self.zoom_scale - self.curr_zoom) * 0.1
+		scaled_surf = pg.transform.scale(self.internal_surf,self.internal_surface_size_vector * self.curr_zoom)
 		scaled_rect = scaled_surf.get_rect(center = (self.half_w,self.half_h))
 
 		self.display_surface.blit(scaled_surf,scaled_rect)
+		
+		pg.draw.rect(self.display_surface, SOFTGRAY, pg.Rect(30, 30, 100, 20))
+		pg.draw.rect(self.display_surface, RED, pg.Rect(30, 30, self.game.player1.hitpoints/self.game.player1.max_hitpoints*100, 20))
+
+		# Mobs
+		if self.zoom_scale == 1:
+			for mob in self.game.mobs.sprites():
+				pg.draw.rect(self.display_surface, SOFTGRAY, pg.Rect(*Vector2(mob.rect.left, mob.rect.bottom+8)-self.offset, TILESIZE, 5))
+				pg.draw.rect(self.display_surface, RED, pg.Rect(*Vector2(mob.rect.left, mob.rect.bottom+8)-self.offset, mob.hitpoints/mob.max_hitpoints*TILESIZE, 5))
+		else:
+			for mob in self.game.mobs.sprites():
+				pg.draw.rect(self.display_surface, SOFTGRAY, pg.Rect(*Vector2(mob.rect.left, mob.rect.bottom+8)-self.offset*self.zoom_scale, TILESIZE, 5))
+				pg.draw.rect(self.display_surface, RED, pg.Rect(*Vector2(mob.rect.left, mob.rect.bottom+8)-self.offset*self.zoom_scale, mob.hitpoints/mob.max_hitpoints*TILESIZE, 5))

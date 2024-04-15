@@ -6,6 +6,7 @@ import pygame as pg
 from settings import *
 from pygame import Vector2
 import random as rand
+from os import path
 import os
 from weapons import *
 from particles import *
@@ -13,6 +14,20 @@ from mobs import *
 
 # List of buttons to switch weapons
 loadoutButtons = [pg.K_1, pg.K_2, pg.K_3, pg.K_4, pg.K_5]
+img_folder = path.join(path.dirname(__file__), 'assets')
+
+class Spritesheet:
+    # utility class for loading and parsing spritesheets
+    def __init__(self, filename):
+        self.spritesheet = pg.image.load(filename).convert()
+
+    def get_image(self, x, y, width, height):
+        # grab an image out of a larger spritesheet
+        image = pg.Surface((width, height))
+        image.blit(self.spritesheet, (0, 0), (x, y, width, height))
+        # image = pg.transform.scale(image, (width, height))
+        image = pg.transform.scale(image, (width, height))
+        return image
 
 # Player Sprite -- inherits from pygame Sprite class
 class Player(pg.sprite.Sprite):
@@ -32,12 +47,16 @@ class Player(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
 
         self.speed = 300
-        self.max_hitpoints = 100000000000
+        self.max_hitpoints = 1000
         self.hitpoints = self.max_hitpoints
         self.dashing = False
         self.dashLeft = 0.1
         self.dashCooldown = 1
         self.dashCoolLeft = 0
+
+        self.spritesheet = Spritesheet(path.join(img_folder, 'theBell.png'))
+        self.load_images()
+        self.image = self.standing_frames[0]
 
         self.vx, vy = 0, 0
         self.x = x * TILESIZE
@@ -49,7 +68,8 @@ class Player(pg.sprite.Sprite):
             Pistol(self.game, self, 'Mouse', PISTOL_COOLDOWN), 
             Shotgun(self.game, self, 'Mouse', SHOTGUN_COOLDOWN), 
             Rifle(self.game, self, 'Mouse', RIFLE_COOLDOWN), 
-            Sniper(self.game, self, 'Mouse', SNIPER_COOLDOWN)
+            Sniper(self.game, self, 'Mouse', SNIPER_COOLDOWN),
+            RocketLauncher(self.game, self, 'Mouse', SHOTGUN_COOLDOWN)
         ]
         self.activeWeapon = self.loadout[0]
         self.activeWeapon.enabled = True
@@ -57,19 +77,24 @@ class Player(pg.sprite.Sprite):
         self.powerups = []
         self.powered_up = False
 
-        
+        self.current_frame = 0
+        self.last_update = 0
 
-    # Function to move player
-    # def move(self, dx=0, dy=0):
-    #     if not self.colliding(dx, dy):
-    #         self.x += dx
-    #         self.y += dy
-
-    # def colliding(self, dx=0, dy=0):
-    #     for wall in self.game.walls:
-    #         if wall.x == self.x + dx and wall.y == self.y + dy:
-    #             return True
-    #     return False
+    def load_images(self):
+        self.standing_frames = [self.spritesheet.get_image(0, 0, TILESIZE, TILESIZE),
+                                self.spritesheet.get_image(32, 0, TILESIZE, TILESIZE)]
+        for frame in self.standing_frames:
+            frame.set_colorkey((0, 0, 0))
+    
+    def animate(self):
+        now = pg.time.get_ticks()
+        if now - self.last_update > 500:
+            self.last_update = now
+            self.current_frame = (self.current_frame + 1) % len(self.standing_frames)
+            bottom = self.rect.bottom
+            self.image = self.standing_frames[self.current_frame]
+            self.rect = self.image.get_rect()
+            self.rect.bottom = bottom
     
     # Function to handle collision with walls
     def collide_with_walls(self, dir):
@@ -99,14 +124,11 @@ class Player(pg.sprite.Sprite):
             if hits[0].__class__.__name__ == "Coin" and hits[0].collectable:
                 self.moneybag += 1
                 hits[0].kill()
-            if hits[0].__class__.__name__ == 'Speed' and hits[0].collectable:
+            if hits[0].__class__.__bases__[0].__name__ == 'PowerUp' and hits[0].collectable:
                 if not hits[0].enabled:
                     print('POWERED UP')
                     hits[0].enable()
                     self.powerups.append(hits[0])
-            if hits[0].__class__.__name__ == 'Health' and hits[0].collectable:
-                if not hits[0].enabled:
-                    hits[0].enable()
             if hits[0].__class__.__name__ == 'Mob' and self.dashing:
                 hits[0].die()
             if hits[0].__class__.__bases__[0].__name__ == 'Gun' and hits[0] not in self.loadout:
@@ -116,10 +138,12 @@ class Player(pg.sprite.Sprite):
         else: self.pickupWeapon = None
 
     def update(self):
+        self.animate()
         # Handle powerups
         if self.powerups:
             self.powered_up = True
             for p in self.powerups:
+                print(p.__class__.__name__)
                 if p.forever:
                     self.powerups.remove(p)
                     continue
@@ -140,11 +164,11 @@ class Player(pg.sprite.Sprite):
             self.dashCoolLeft -= self.game.dt
 
         # Visual indication of powerup
-        if self.powered_up:
-            self.image.fill(YELLOW)
-            Particle(self.game, self.x, self.y, TILESIZE, 0, 0, 0.2, YELLOW, randSize=False, decay=False, fade=True)
-        else:
-            self.image.fill(GREEN)
+        # if self.powered_up:
+        #     self.image.fill(YELLOW)
+        #     Particle(self.game, self.x, self.y, TILESIZE, 0, 0, 0.2, YELLOW, randSize=False, decay=False, fade=True)
+        # else:
+        #     self.image.fill(GREEN)
 
         self.get_keys()
         self.x += self.vx * self.game.dt
@@ -167,14 +191,6 @@ class Player(pg.sprite.Sprite):
         self.vx, self.vy = 0, 0
         clicks = pg.mouse.get_pressed()
         keys = pg.key.get_pressed()
-        if keys[pg.K_x]:
-            self.game.camera.zoom_scale = 1.4
-            if self.game.slowmo: self.game.slowmo = False
-            else:
-                self.game.slowmo = True
-                for sprite in self.game.active_sprites.sprites():
-                    if hasattr(sprite, 'speed'):
-                        sprite.speed /= 2
         if keys[pg.K_f]:
             self.game.rot = 5
         if clicks[0]:
@@ -221,6 +237,10 @@ class Player(pg.sprite.Sprite):
                     self.activeWeapon.enabled = False
                     self.activeWeapon = self.loadout[idx]
                     self.activeWeapon.enabled = True
+                    if self.activeWeapon.__class__.__name__ == 'Sniper':
+                        self.game.camera.zoom_scale = 0.9
+                    else:
+                        self.game.camera.zoom_scale = 1
                     pg.mixer.Sound.play(self.game.gun_cock)
         if self.vx != 0 and self.vy != 0:
             self.vx *= 0.7071
@@ -341,6 +361,32 @@ class Speed(PowerUp):
         print('done')
         self.game.player1.speed -= 100
         self.kill()
+
+class Slowmo(PowerUp):
+    def __init__(self, game, x, y, delay):
+        # Set dimensions 
+        self.image = pg.transform.scale(pg.image.load('./assets/clock.png'), (TILESIZE*1.5, TILESIZE*1.5))
+        super().__init__(game, x, y, delay, 5, self.image)
+
+    # Effect of powerup
+    def effect(self):
+        if not self.game.slowmo:
+            self.game.camera.zoom_scale = 1.6
+            self.game.slowmo = True
+            for sprite in self.game.active_sprites.sprites():
+                if hasattr(sprite, 'speed'):
+                    sprite.speed /= 2
+    
+    # Disable powerup
+    def disable(self):
+        self.kill()
+        print('done')
+        self.game.camera.zoom_scale = 1
+        self.game.slowmo = False
+        for sprite in self.game.active_sprites.sprites():
+            if hasattr(sprite, 'speed'):
+                sprite.speed *= 2
+        
 
 # Inherits from PowerUp
 class Health(PowerUp):

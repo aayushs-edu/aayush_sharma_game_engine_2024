@@ -53,7 +53,6 @@ class Particle(Sprite):
             self.vx, self.vy = (self.target - Vector2(self.x, self.y)) * self.speed
             
             # Update particle position
-            print(self.game.slowmo)
             self.x += self.vx * self.game.dt / 10
             self.y += self.vy * self.game.dt / 10
             self.rect.x = self.x
