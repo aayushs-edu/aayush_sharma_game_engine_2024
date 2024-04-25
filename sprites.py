@@ -54,9 +54,9 @@ class Player(pg.sprite.Sprite):
         self.dashCooldown = 1
         self.dashCoolLeft = 0
 
-        self.spritesheet = Spritesheet(path.join(img_folder, 'theBell.png'))
-        self.load_images()
-        self.image = self.standing_frames[0]
+        # self.spritesheet = Spritesheet(path.join(img_folder, 'theBell.png'))
+        # self.load_images()
+        # self.image = self.standing_frames[0]
 
         self.vx, vy = 0, 0
         self.x = x * TILESIZE
@@ -138,7 +138,7 @@ class Player(pg.sprite.Sprite):
         else: self.pickupWeapon = None
 
     def update(self):
-        self.animate()
+        # self.animate()
         # Handle powerups
         if self.powerups:
             self.powered_up = True
@@ -467,5 +467,40 @@ class Lootbox(pg.sprite.Sprite):
     
     def update(self):
         if self.fading: self.fade()
+        else: self.checkNearby()
+
+class Shop(pg.sprite.Sprite):
+    def __init__(self, game, x, y):
+        self.groups = game.all_sprites, game.active_sprites
+        # init superclass
+        pg.sprite.Sprite.__init__(self, self.groups)
+        # set game class
+        self.game = game
+        # Set dimensions
+        self.image = pg.surface.Surface((TILESIZE, TILESIZE))
+        # Give color
+        self.image.fill(ORANGE)
+        # Rectangular area of wall
+        self.x = x * TILESIZE
+        self.y = y * TILESIZE
+        self.rect = self.image.get_rect(center=(self.x, self.y))
+        self.open_shop = False
+
+    # Input parameter is whether the user is pressing E or not (True or False)
+    def checkNearby(self):
+        # Check if player is in proximity
+        hits = pg.sprite.spritecollide(self, self.game.player, False)
+        if hits:
+            keys = pg.key.get_pressed()
+            if keys[pg.K_e]:
+                self.open_shop = True
+
+
+    def open(self):
+        pass
+            
+    
+    def update(self):
+        if self.open_shop: self.open()
         else: self.checkNearby()
 

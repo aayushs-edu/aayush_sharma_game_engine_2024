@@ -6,7 +6,7 @@ from weapons import *
 # Mob Sprite -- inherits from pygame Sprite class
 class Mob(pg.sprite.Sprite):
     # Initialize the Mob
-    def __init__(self, game, target, x, y, weapon, hitpoints, color, speed, range):
+    def __init__(self, game, target, x, y, weapon, hitpoints, color, speed, range, size=1, cooldown=MOB_COOLDOWN):
         # Define the groups this sprite belongs to
         self.groups = game.all_sprites, game.mobs, game.active_sprites
         # Initialize the superclass
@@ -16,7 +16,7 @@ class Mob(pg.sprite.Sprite):
         # Reference to the target (player)
         self.target = target
         # Set the image of the sprite
-        self.image = pg.Surface((TILESIZE, TILESIZE))
+        self.image = pg.Surface((TILESIZE*size, TILESIZE*size))
         # Fill the image with a color
         self.image.fill(color)
         # Store the color
@@ -33,11 +33,11 @@ class Mob(pg.sprite.Sprite):
         # Assign weapon based on input
         match weapon:
             case 'Pistol':
-                self.weapon = Pistol(self.game, self, self.target.rect, MOB_COOLDOWN)
+                self.weapon = Pistol(self.game, self, self.target.rect, cooldown)
             case 'Shotgun':
-                self.weapon = Shotgun(self.game, self, self.target.rect, MOB_COOLDOWN)
+                self.weapon = Shotgun(self.game, self, self.target.rect, cooldown)
             case 'Rifle':
-                self.weapon = Rifle(self.game, self, self.target.rect, MOB_COOLDOWN)
+                self.weapon = Rifle(self.game, self, self.target.rect, cooldown)
         self.weapon.enabled = True
 
         self.range = range
@@ -123,3 +123,37 @@ class Sentinel(Mob):
     def __init__(self, game, target, x, y):
         weapon = 'Shotgun'
         super().__init__(game, target, x, y, weapon, hitpoints=100, color=BLUE, speed=8, range=500)
+
+# class Boss(pg.sprite.Sprite):
+#     def __init__(self, game, target, x, y):
+#         # Define the groups this sprite belongs to
+#         self.groups = game.all_sprites, game.mobs, game.active_sprites
+#         # Initialize the superclass
+#         pg.sprite.Sprite.__init__(self, self.groups)
+#         # Reference to the game instance
+#         self.game = game
+#         # Reference to the target (player)
+#         self.target = target
+#         # Set the image of the sprite
+#         # Fill the image with a color
+#         # Store the color
+#         # Get the rectangular area of the sprite
+#         self.x = x*TILESIZE
+#         self.y = y*TILESIZE
+        
+#         self.image = pg.surface.Surface((TILESIZE*5, TILESIZE*5))
+#         self.rect = self.image.get_rect(center=(self.x, self.y))
+
+#         self.max_hitpoints = 1000
+#         self.hitpoints = self.max_hitpoints
+    
+#     def update(self):
+#         pg.draw.circle(self.game.screen, RED, self.rect.center, TILESIZE)
+#         pg.display.flip()
+
+
+class Boss(Mob):
+    def __init__(self, game, target, x, y):
+        weapon = 'Rifle'
+        super().__init__(game, target, x, y, weapon, hitpoints=1000, color=RED, speed=5, range=500, size=2, cooldown=0.2)
+

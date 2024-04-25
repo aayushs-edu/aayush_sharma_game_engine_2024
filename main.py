@@ -93,25 +93,32 @@ class Game:
                 if tile == 'H':
                     Health(self, col, row, 0)
                 if tile == 'M':
-                    Troop(self, self.player1, col, row)
+                    # Troop(self, self.player1, col, row)
                     pass
                 if tile == 'S':
-                    Sentinel(self, self.player1, col, row)
+                    # Sentinel(self, self.player1, col, row)
                     pass
                 if tile == 'L':
                     Lootbox(self, col, row)
+                if tile == 'B':
+                    Boss(self, self.player1, col, row)
                 if tile == 'S':
                     Slowmo(self, col, row, 0)
+                if tile == 's':
+                    self.shop = Shop(self, col, row)
     
     # Method to draw game elements
     def draw(self):
         self.screen.fill(BGCOLOR)
-        self.draw_grid()
-        self.camera.update()
-        self.camera.custom_draw(self.player1)
-        self.draw_text(self.screen, "Coins " + str(self.player1.moneybag), 'space.ttf', 24, WHITE, WIDTH/2, 50)
-        self.drawWeaponOverlay()
-        self.drawAmmoOverlay()
+        if self.shop.open_shop:
+            self.shop.open()
+        else:
+            self.draw_grid()
+            self.camera.update()
+            self.camera.custom_draw(self.player1)
+            self.draw_text(self.screen, "Coins " + str(self.player1.moneybag), 'space.ttf', 24, WHITE, WIDTH/2, 50)
+            self.drawWeaponOverlay()
+            self.drawAmmoOverlay()
         pg.display.update()
         pg.display.flip()
 
