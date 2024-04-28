@@ -138,7 +138,7 @@ class Player(pg.sprite.Sprite):
         else: self.pickupWeapon = None
 
     def update(self):
-        # self.animate()
+        if self.game.shop.open_shop: return
         # Handle powerups
         if self.powerups:
             self.powered_up = True
@@ -477,14 +477,32 @@ class Shop(pg.sprite.Sprite):
         # set game class
         self.game = game
         # Set dimensions
-        self.image = pg.surface.Surface((TILESIZE, TILESIZE))
-        # Give color
-        self.image.fill(ORANGE)
+        self.image = pg.transform.scale(pg.image.load('./assets/shop.png'), (TILESIZE*1.5, TILESIZE*1.5))
+
+        # Background
+        self.bg_image = pg.transform.scale(pg.image.load('./assets/shop_bg.jpg'), (TILESIZE*4, TILESIZE*4))
+        self.bg_rect = self.bg_image.get_rect()
+        self.bg_width = self.bg_image.get_width()
+        self.bg_height = self.bg_image.get_height()
+        self.bg_loc = -HEIGHT
+
+        # Decorations
+        self.board_img = pg.transform.scale(pg.image.load('./assets/shop_board.png'), (TILESIZE*6, TILESIZE*5))
+
         # Rectangular area of wall
         self.x = x * TILESIZE
         self.y = y * TILESIZE
         self.rect = self.image.get_rect(center=(self.x, self.y))
         self.open_shop = False
+
+        self.margin = 300
+        self.shop_items = {
+            'pistol': 1, 
+            'shotgun': 10, 
+            'rifle': 15, 
+            'sniper': 30, 
+            'rocket-launcher': 100
+        }
 
     # Input parameter is whether the user is pressing E or not (True or False)
     def checkNearby(self):
@@ -497,10 +515,39 @@ class Shop(pg.sprite.Sprite):
 
 
     def open(self):
-        pass
-            
+        self.draw_bg_tiles(self.bg_loc)
+        self.game.screen.blit(self.board_img, (WIDTH-self.board_img.get_width(), 10 + self.bg_loc))
+        idx = 0
+        for i in range(self.margin, WIDTH-self.margin, 200):
+            for j in range(200, HEIGHT-200, 200):
+                # Wooden frame
+                frame = pg.draw.rect(self.game.screen, (240, 152, 70), (i, j + self.bg_loc, 100, 100), 8)
+
+                # Weapon img
+                if idx < len(self.shop_items):
+                    curr_weapon = list(self.shop_items)[idx]
+                    weapon = pg.image.load(f'assets/{curr_weapon}.png')
+                    weapon_img = pg.transform.rotate(pg.transform.scale(weapon, Vector2(weapon.get_width(), weapon.get_height()).normalize() * 80), 40)
+                    weapon_rect = weapon_img.get_rect(center=frame.center)
+                    self.game.screen.blit(weapon_img, weapon_rect)
+
+                    # Coin img
+                    coin_img = pg.transform.scale(pg.image.load('./assets/coin/coin1.png'), (TILESIZE, TILESIZE))
+                    self.game.screen.blit(coin_img, (frame.centerx + 5, frame.centery + 70 + self.bg_loc))
+
+                    # Price
+                    self.game.draw_text(self.game.screen, str(self.shop_items[curr_weapon]), 'space.ttf', 24, WHITE, frame.centerx - 20, frame.centery + 87 + self.bg_loc)
+
+                    idx += 1
+
+        if self.bg_loc < -20:
+            self.bg_loc += 8 * math.log(-self.bg_loc)
     
+    def draw_bg_tiles(self, top):
+        for i in range(WIDTH//self.bg_width):
+            for j in range((HEIGHT)//self.bg_width + 1):
+                self.game.screen.blit(self.bg_image, (self.bg_width*i, (self.bg_height*j + top)))
+
     def update(self):
-        if self.open_shop: self.open()
-        else: self.checkNearby()
+        if not self.open_shop: self.checkNearby()
 

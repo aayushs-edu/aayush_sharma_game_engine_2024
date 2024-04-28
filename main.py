@@ -64,7 +64,7 @@ class Game:
     # Method to initialize a new game
     def new(self):
         # Playing background music
-        pg.mixer.music.play(-1)
+        # pg.mixer.music.play(-1)
         
         # Creating sprite groups
         self.all_sprites = pg.sprite.Group()
@@ -119,8 +119,8 @@ class Game:
             self.draw_text(self.screen, "Coins " + str(self.player1.moneybag), 'space.ttf', 24, WHITE, WIDTH/2, 50)
             self.drawWeaponOverlay()
             self.drawAmmoOverlay()
-        pg.display.update()
         pg.display.flip()
+        pg.display.update()
 
     # Method to draw weapon overlays
     def drawWeaponOverlay(self):
