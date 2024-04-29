@@ -1,4 +1,4 @@
-# Beta: add boss fight
+# Beta: add shop
 
 # Importing necessary modules
 import pygame as pg
