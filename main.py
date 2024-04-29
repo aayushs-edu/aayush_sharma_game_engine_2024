@@ -54,6 +54,8 @@ class Game:
         self.pistol_reload.set_volume(0.1)
         self.shotgun_reload = pg.mixer.Sound(os.path.join(self.soundDir, 'shotgun-reload.ogg'))
         self.shotgun_reload.set_volume(0.1)
+        self.purchase_sound = pg.mixer.Sound(os.path.join(self.soundDir, 'purchase.mp3'))
+        self.purchase_sound.set_volume(0.1)
         self.music = pg.mixer.music.load(os.path.join(self.soundDir, 'music4.mp3'))
         pg.mixer.music.set_volume(0.2)
         # Reading map data from file
@@ -112,13 +114,15 @@ class Game:
         self.screen.fill(BGCOLOR)
         if self.shop.open_shop:
             self.shop.open()
+            self.drawWeaponOverlay()
+            self.draw_text(self.screen, "Coins " + str(self.player1.moneybag), 'space.ttf', 24, WHITE, WIDTH/2, 50)
         else:
             self.draw_grid()
             self.camera.update()
             self.camera.custom_draw(self.player1)
             self.draw_text(self.screen, "Coins " + str(self.player1.moneybag), 'space.ttf', 24, WHITE, WIDTH/2, 50)
-            self.drawWeaponOverlay()
             self.drawAmmoOverlay()
+            self.drawWeaponOverlay()
         pg.display.flip()
         pg.display.update()
 

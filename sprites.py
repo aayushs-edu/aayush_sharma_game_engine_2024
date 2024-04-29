@@ -65,11 +65,7 @@ class Player(pg.sprite.Sprite):
         self.moneybag = 0
         # Loadout as a list of weapons
         self.loadout : list[Gun] = [
-            Pistol(self.game, self, 'Mouse', PISTOL_COOLDOWN), 
-            Shotgun(self.game, self, 'Mouse', SHOTGUN_COOLDOWN), 
-            Rifle(self.game, self, 'Mouse', RIFLE_COOLDOWN), 
-            Sniper(self.game, self, 'Mouse', SNIPER_COOLDOWN),
-            RocketLauncher(self.game, self, 'Mouse', SHOTGUN_COOLDOWN)
+            Pistol(self.game, self, 'Mouse', PISTOL_COOLDOWN)
         ]
         self.activeWeapon = self.loadout[0]
         self.activeWeapon.enabled = True
@@ -488,6 +484,7 @@ class Shop(pg.sprite.Sprite):
 
         # Decorations
         self.board_img = pg.transform.scale(pg.image.load('./assets/shop_board.png'), (TILESIZE*6, TILESIZE*5))
+        self.button_img = pg.transform.scale(pg.image.load('./assets/button.png'), (TILESIZE*3.5, TILESIZE*3.5))
 
         # Rectangular area of wall
         self.x = x * TILESIZE
@@ -496,13 +493,13 @@ class Shop(pg.sprite.Sprite):
         self.open_shop = False
 
         self.margin = 300
-        self.shop_items = {
-            'pistol': 1, 
-            'shotgun': 10, 
-            'rifle': 15, 
-            'sniper': 30, 
-            'rocket-launcher': 100
-        }
+        self.shop_items = [
+            ['pistol', 1, ShopButton(self.game, 0, 0, self.button_img, Pistol(self.game, self.game.player1, 'Mouse', PISTOL_COOLDOWN), 1)],
+            ['shotgun', 5, ShopButton(self.game, 0, 0, self.button_img, Shotgun(self.game, self.game.player1, 'Mouse', SHOTGUN_COOLDOWN), 5)],
+            ['rifle', 15, ShopButton(self.game, 0, 0, self.button_img, Rifle(self.game, self.game.player1, 'Mouse', RIFLE_COOLDOWN), 15)],
+            ['sniper', 30, ShopButton(self.game, 0, 0, self.button_img, Sniper(self.game, self.game.player1, 'Mouse', SNIPER_COOLDOWN), 30)],
+            ['rocket-launcher', 100, ShopButton(self.game, 0, 0, self.button_img, RocketLauncher(self.game, self.game.player1, 'Mouse', SHOTGUN_COOLDOWN), 100)]
+        ]
 
     # Input parameter is whether the user is pressing E or not (True or False)
     def checkNearby(self):
@@ -515,6 +512,11 @@ class Shop(pg.sprite.Sprite):
 
 
     def open(self):
+        keys = pg.key.get_pressed()
+        if keys[pg.K_ESCAPE]:
+            self.game.screen.fill(BGCOLOR)
+            self.open_shop = False
+
         self.draw_bg_tiles(self.bg_loc)
         self.game.screen.blit(self.board_img, (WIDTH-self.board_img.get_width(), 10 + self.bg_loc))
         idx = 0
@@ -525,18 +527,21 @@ class Shop(pg.sprite.Sprite):
 
                 # Weapon img
                 if idx < len(self.shop_items):
-                    curr_weapon = list(self.shop_items)[idx]
+                    curr_weapon = self.shop_items[idx][0]
                     weapon = pg.image.load(f'assets/{curr_weapon}.png')
                     weapon_img = pg.transform.rotate(pg.transform.scale(weapon, Vector2(weapon.get_width(), weapon.get_height()).normalize() * 80), 40)
                     weapon_rect = weapon_img.get_rect(center=frame.center)
                     self.game.screen.blit(weapon_img, weapon_rect)
+
+                    # Button
+                    self.shop_items[idx][2].draw(frame.centerx - 55, frame.centery + 30 + self.bg_loc)
 
                     # Coin img
                     coin_img = pg.transform.scale(pg.image.load('./assets/coin/coin1.png'), (TILESIZE, TILESIZE))
                     self.game.screen.blit(coin_img, (frame.centerx + 5, frame.centery + 70 + self.bg_loc))
 
                     # Price
-                    self.game.draw_text(self.game.screen, str(self.shop_items[curr_weapon]), 'space.ttf', 24, WHITE, frame.centerx - 20, frame.centery + 87 + self.bg_loc)
+                    self.game.draw_text(self.game.screen, str(self.shop_items[idx][1]), 'space.ttf', 24, WHITE, frame.centerx - 20, frame.centery + 87 + self.bg_loc)
 
                     idx += 1
 
@@ -551,3 +556,38 @@ class Shop(pg.sprite.Sprite):
     def update(self):
         if not self.open_shop: self.checkNearby()
 
+class ShopButton():
+    def __init__(self, game, x, y, image, item, price) -> None:
+        self.game = game
+
+        self.image = image
+        self.normal_img = image
+        self.faded_img = self.image.copy()
+        self.faded_img.fill((255, 255, 255, 80), special_flags=pg.BLEND_RGBA_MULT)
+
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+
+        self.item = item
+        self.price = price
+        self.purchased = False
+    
+    def draw(self, x, y):
+        # Draw button on screen
+        self.rect.x = x
+        self.rect.y = y
+
+        # Mouse
+        pos = pg.mouse.get_pos()
+
+        if self.rect.collidepoint(pos):
+            self.image = self.faded_img
+            if pg.mouse.get_pressed()[0] and not self.purchased and self.game.player1.moneybag >= self.price:
+                self.purchased = True
+                self.game.player1.loadout.append(self.item)
+                self.game.player1.moneybag -= self.price
+                pg.mixer.Sound.play(self.game.purchase_sound)
+        else:
+            self.image = self.normal_img
+
+        self.game.screen.blit(self.image, self.rect)
