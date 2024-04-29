@@ -66,7 +66,7 @@ class Game:
     # Method to initialize a new game
     def new(self):
         # Playing background music
-        # pg.mixer.music.play(-1)
+        pg.mixer.music.play(-1)
         
         # Creating sprite groups
         self.all_sprites = pg.sprite.Group()
@@ -95,10 +95,10 @@ class Game:
                 if tile == 'H':
                     Health(self, col, row, 0)
                 if tile == 'M':
-                    # Troop(self, self.player1, col, row)
+                    Troop(self, self.player1, col, row)
                     pass
                 if tile == 'S':
-                    # Sentinel(self, self.player1, col, row)
+                    Sentinel(self, self.player1, col, row)
                     pass
                 if tile == 'L':
                     Lootbox(self, col, row)
