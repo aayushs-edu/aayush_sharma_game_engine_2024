@@ -50,7 +50,7 @@ class Mob(pg.sprite.Sprite):
     # Update the sprite each frame
     def update(self):
         self.check_range()
-        if self.target_in_range:
+        if self.target_in_range and not self.game.shop.open_shop:
             # Move toward player
             self.vx, self.vy = (Vector2(self.target.rect.center) - Vector2(self.x, self.y)) / TILESIZE * self.speed
             

@@ -1,4 +1,4 @@
-# Beta: add shop
+# Final: Boss with 3 phases
 
 # Importing necessary modules
 import pygame as pg
@@ -116,6 +116,7 @@ class Game:
             self.shop.open()
             self.drawWeaponOverlay()
             self.draw_text(self.screen, "Coins " + str(self.player1.moneybag), 'space.ttf', 24, WHITE, WIDTH/2, 50)
+            self.drawHealthBar()
         else:
             self.draw_grid()
             self.camera.update()
@@ -125,6 +126,10 @@ class Game:
             self.drawWeaponOverlay()
         pg.display.flip()
         pg.display.update()
+
+    def drawHealthBar(self):
+        pg.draw.rect(self.camera.display_surface, SOFTGRAY, pg.Rect(30, 30, 100, 20))
+        pg.draw.rect(self.camera.display_surface, RED, pg.Rect(30, 30, self.player1.hitpoints/self.player1.max_hitpoints*100, 20))
 
     # Method to draw weapon overlays
     def drawWeaponOverlay(self):
