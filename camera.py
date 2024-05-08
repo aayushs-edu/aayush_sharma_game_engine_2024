@@ -112,7 +112,3 @@ class CameraGroup(pg.sprite.Group):
 			for mob in self.game.mobs.sprites():
 				pg.draw.rect(self.display_surface, SOFTGRAY, pg.Rect(*Vector2(mob.rect.left, mob.rect.bottom+8)-self.offset, TILESIZE, 5))
 				pg.draw.rect(self.display_surface, RED, pg.Rect(*Vector2(mob.rect.left, mob.rect.bottom+8)-self.offset, mob.hitpoints/mob.max_hitpoints*TILESIZE, 5))
-		else:
-			for mob in self.game.mobs.sprites():
-				pg.draw.rect(self.display_surface, SOFTGRAY, pg.Rect(*Vector2(mob.rect.left, mob.rect.bottom+8)-self.offset*self.zoom_scale, TILESIZE, 5))
-				pg.draw.rect(self.display_surface, RED, pg.Rect(*Vector2(mob.rect.left, mob.rect.bottom+8)-self.offset*self.zoom_scale, mob.hitpoints/mob.max_hitpoints*TILESIZE, 5))

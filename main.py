@@ -103,7 +103,7 @@ class Game:
                 if tile == 'L':
                     Lootbox(self, col, row)
                 if tile == 'B':
-                    Boss(self, self.player1, col, row)
+                    Boss(self, self.player1, col, row, 1000)
                 if tile == 'S':
                     Slowmo(self, col, row, 0)
                 if tile == 's':

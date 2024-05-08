@@ -137,6 +137,8 @@ class Player(pg.sprite.Sprite):
         if self.game.shop.open_shop: return
         # Handle powerups
         if self.powerups:
+            self.image.fill(YELLOW)
+            if self.powerups[0].__class__.__name__ == 'Speed': Particle(self.game, self.x, self.y, TILESIZE, 0, 0, 0.2, YELLOW, randSize=False, decay=False, fade=True)
             self.powered_up = True
             for p in self.powerups:
                 print(p.__class__.__name__)
@@ -146,7 +148,9 @@ class Player(pg.sprite.Sprite):
                 if p.dur <= 0:
                     p.disable()
                     self.powerups.remove(p)
-        else: self.powered_up = False
+        else:
+            self.image.fill(GREEN)
+            self.powered_up = False
 
         # Handle dashing
         if self.dashing:
@@ -395,7 +399,7 @@ class Health(PowerUp):
     def effect(self):
         print('HEALTH')
         # Give player 20 health, max 100
-        self.game.player1.hitpoints = min(100, self.game.player1.hitpoints + 20)
+        self.game.player1.hitpoints = min(self.game.player1.max_hitpoints, self.game.player1.hitpoints + 20)
         self.kill()
                 
 class Lootbox(pg.sprite.Sprite):

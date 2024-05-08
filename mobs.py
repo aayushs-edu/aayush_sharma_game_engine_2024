@@ -2,6 +2,7 @@ import pygame as pg
 from pygame import Vector2
 from settings import *
 from weapons import *
+import sprites
 
 # Mob Sprite -- inherits from pygame Sprite class
 class Mob(pg.sprite.Sprite):
@@ -73,6 +74,7 @@ class Mob(pg.sprite.Sprite):
         if self.hitpoints <= 0:
             self.weapon.dead = True
             self.kill()
+            coin = sprites.Coin(self.game, self.x/TILESIZE, self.y/TILESIZE, 0)
 
     # Function to handle collision with walls
     def collide_with_walls(self, dir):
@@ -152,8 +154,23 @@ class Sentinel(Mob):
 #         pg.display.flip()
 
 
-class Boss(Mob):
-    def __init__(self, game, target, x, y):
-        weapon = 'Rifle'
-        super().__init__(game, target, x, y, weapon, hitpoints=1000, color=RED, speed=5, range=500, size=2, cooldown=0.2)
+class Boss(pg.sprite.Sprite):
+    def __init__(self, game, target, x, y, hitpoints):
+        self.groups = game.all_sprites, game.mobs, game.active_sprites
+        pg.sprite.Sprite.__init__(self, self.groups)
+
+        self.game = game
+        self.target = target
+
+        self.max_hitpoints = hitpoints
+        self.hitpoints = self.max_hitpoints
+
+        self.x = x * TILESIZE
+        self.y = y * TILESIZE
+        self.image = pg.surface.Surface((TILESIZE*10, TILESIZE*10))
+        self.rect = self.image.get_rect()
+    
+    def draw(self):
+        pg.draw.circle(self.image, RED, self.rect.center, TILESIZE)
+
 

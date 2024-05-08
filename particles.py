@@ -53,15 +53,15 @@ class Particle(Sprite):
             self.vx, self.vy = (self.target - Vector2(self.x, self.y)) * self.speed
             
             # Update particle position
-            self.x += self.vx * self.game.dt / 10
-            self.y += self.vy * self.game.dt / 10
+            self.x += (self.vx) * self.game.dt / 10
+            self.y += (self.vy) * self.game.dt / 10
             self.rect.x = self.x
             self.rect.y = self.y
 
             # Scale down particle size over time
-            if self.decay and not self.game.slowmo:
-                self.image=pg.transform.scale(self.image, (max(0, self.image.get_width()-self.dur/50), 
-                                                        max(0, self.image.get_height()-self.dur/50)))
+            if self.decay:
+                self.image=pg.transform.scale(self.image, (max(0, self.image.get_width()-self.dur/(50 + 10*self.game.slowmo)), 
+                                                        max(0, self.image.get_height()-self.dur/(50 + 10*self.game.slowmo))))
         else:
             # Kill the particle if duration is over
             self.kill()

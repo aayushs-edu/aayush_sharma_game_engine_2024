@@ -58,7 +58,7 @@ class Gun(pg.sprite.Sprite):
         # Set other attributes
         self.enabled = False
         self.dead = False
-        self.disabledLifetime = 10
+        self.disabledLifetime = 1
         self.flipped = False
         self.angle = 0
         self.recoiling = False
@@ -260,7 +260,7 @@ class Shotgun(Gun):
     def shoot(self, color):
         if self.cool_dur <= 0 and not self.reloading:
             for angle in np.random.normal(loc=self.angle, scale=10.0, size=5):
-                Bullet(self.game, *self.shooting_point, angle, self.holder, color, self.damage, 5 if self.game.slowmo else 20) 
+                Bullet(self.game, *self.shooting_point, angle, self.holder, color, self.damage, 10 if self.game.slowmo else 20) 
 
             self.shotsLeft -= 1
             if self.shotsLeft <= 0:
@@ -290,7 +290,7 @@ class Shotgun(Gun):
 
 # Bullet Sprites
 class Bullet(pg.sprite.Sprite):
-    def __init__(self, game, x, y, angle, shooter, color, damage, speed, image=None, trail=False):
+    def __init__(self, game, x, y, angle, shooter, color, damage, speed, image=None, trail=False, dur=5):
         self.groups = game.all_sprites, game.bullets, game.active_sprites
         # init superclass
         pg.sprite.Sprite.__init__(self, self.groups)
@@ -315,12 +315,16 @@ class Bullet(pg.sprite.Sprite):
         self.speed = speed
         self.damage = damage
         self.trail = trail
+        self.dur = dur
 
         # Calculating velocity based on angle
         self.vx = math.cos(self.angle * math.pi/180) * self.speed
         self.vy = math.sin(self.angle * math.pi/180) * self.speed
     
     def update(self):
+        self.dur -= self.game.dt
+        if self.dur <= 0:
+            self.kill()
         # Move in direction specified in init, constant speed
         self.x += self.vx
         self.y -= self.vy
