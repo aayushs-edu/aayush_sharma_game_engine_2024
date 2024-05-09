@@ -56,8 +56,10 @@ class Game:
         self.shotgun_reload.set_volume(0.1)
         self.purchase_sound = pg.mixer.Sound(os.path.join(self.soundDir, 'purchase.mp3'))
         self.purchase_sound.set_volume(0.1)
+        self.slow_gunshot = pg.mixer.Sound(os.path.join(self.soundDir, 'slow-gun.mp3'))
+        self.slow_gunshot.set_volume(0.1)
         self.music = pg.mixer.music.load(os.path.join(self.soundDir, 'music4.mp3'))
-        pg.mixer.music.set_volume(0.2)
+        pg.mixer.music.set_volume(0.08)
         # Reading map data from file
         with open(os.path.join(game_folder, 'map.txt'), 'r') as f:
             for line in f:
@@ -171,6 +173,7 @@ class Game:
 
     # Method to update game state
     def update(self):
+        pg.mixer.music.set
         # Update sprites
         self.all_sprites.update()
         if len(self.particles.sprites()) > 100:

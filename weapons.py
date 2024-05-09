@@ -156,7 +156,7 @@ class Gun(pg.sprite.Sprite):
                 Particle(self.game, *self.shooting_point, 15, 100*pDir, 40, 5, YELLOW)
 
             self.cool_dur = self.cooldown
-            pg.mixer.Sound.play(self.sound)
+            pg.mixer.Sound.play(self.sound) if not self.game.slowmo else pg.mixer.Sound.play(self.game.slow_gunshot)
 
             # Handle magSize and reloading
             self.shotsLeft -= 1
@@ -274,7 +274,7 @@ class Shotgun(Gun):
 
             self.cool_dur = self.cooldown
 
-            pg.mixer.Sound.play(self.sound)
+            pg.mixer.Sound.play(self.sound) if not self.game.slowmo else pg.mixer.Sound.play(self.game.slow_gunshot)
             
             self.recoiling = True
 
