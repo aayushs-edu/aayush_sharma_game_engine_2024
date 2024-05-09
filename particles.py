@@ -38,7 +38,8 @@ class Particle(Sprite):
         # Initializing velocity components
         self.vx, self.vy = 0, 0
         # Setting particle speed
-        self.speed = 1
+        self.norm_speed = 1
+        self.speed = self.norm_speed
 
     # Update method
     def update(self):

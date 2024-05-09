@@ -312,7 +312,8 @@ class Bullet(pg.sprite.Sprite):
         self.color = color
 
         self.angle = angle
-        self.speed = speed
+        self.norm_speed = speed
+        self.speed = self.norm_speed
         self.damage = damage
         self.trail = trail
         self.dur = dur
