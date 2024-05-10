@@ -58,6 +58,8 @@ class Game:
         self.purchase_sound.set_volume(0.1)
         self.slow_gunshot = pg.mixer.Sound(os.path.join(self.soundDir, 'slow-gun.mp3'))
         self.slow_gunshot.set_volume(0.1)
+        self.explosion = pg.mixer.Sound(os.path.join(self.soundDir, 'explosion.mp3'))
+        self.explosion.set_volume(0.5)
         self.music = pg.mixer.music.load(os.path.join(self.soundDir, 'music4.mp3'))
         pg.mixer.music.set_volume(0.08)
         # Reading map data from file
