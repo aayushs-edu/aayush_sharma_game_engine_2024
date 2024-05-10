@@ -67,8 +67,13 @@ class Player(pg.sprite.Sprite):
         self.loadout : list[Gun] = [
             Pistol(self.game, self, 'Mouse', PISTOL_COOLDOWN)
         ]
+        self.explosives : list[Grenade] = [
+            Grenade(self.game, self)
+        ]
+        self.grenade_mode = False
         self.activeWeapon = self.loadout[0]
         self.activeWeapon.enabled = True
+        self.prevWeapon = self.activeWeapon
 
         self.powerups = []
         self.powered_up = False
@@ -210,6 +215,14 @@ class Player(pg.sprite.Sprite):
             self.activeWeapon = self.loadout[-1]
             self.activeWeapon.enabled = True
             self.pickupWeapon = None
+        # Grenade
+        if keys[pg.K_LSHIFT] and not self.grenade_mode:
+            self.grenade_mode = True
+            self.prevWeapon = self.activeWeapon
+            self.activeWeapon.enabled = False
+            self.activeWeapon = self.explosives[0]
+            self.activeWeapon.enabled = True
+        
         # Spawn mobs
         if keys[pg.K_r]:
             Troop(self.game, self, 3, 3)

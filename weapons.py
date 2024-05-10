@@ -1,6 +1,7 @@
 import pygame as pg
 from pygame import Vector2
 import math
+
 from settings import *
 import random as rand
 from particles import *
@@ -365,3 +366,67 @@ class Bullet(pg.sprite.Sprite):
                 hits[0].kill()
                 for _ in range(10):
                     Particle(self.game, self.x, self.y, 25, 200, 360, 1, YELLOW)
+
+class Grenade(pg.sprite.Sprite):
+    def __init__(self, game, holder) -> None:
+        self.game = game
+        self.holder = holder
+        
+        # Initialize sprite superclass
+        pg.sprite.Sprite.__init__(self, game.all_sprites, game.active_sprites)
+
+        # Set image and attributes
+        self.img_overlay = pg.transform.scale(pg.image.load('./assets/grenade.png').convert_alpha(), (TILESIZE, TILESIZE))
+        self.image_orig = self.img_overlay
+        self.image = self.image_orig
+        
+        # Set position
+        self.pivot = Vector2(self.holder.rect.center)
+        self.pos = self.pivot + (20, 0)
+        self.x, self.y = self.pos
+        self.rect = self.image.get_rect(center=self.pos)
+        self.offset = Vector2(0, 0)
+
+        # Set other attributes
+        self.enabled = False
+        self.dead = False
+        self.disabledLifetime = 1
+        self.flipped = False
+        self.angle = 0
+    
+    def rotate(self, target):
+        self.offset = Vector2(target) - (WIDTH // 2, HEIGHT // 2)
+
+        pg.draw.line(self.game.screen, GREEN, (WIDTH//2, HEIGHT//2), target, 2)
+        pg.display.flip()
+
+        # Calculate angle between holder and target
+        angle = -math.degrees(math.atan2(self.offset.y, self.offset.x))
+        self.angle = angle
+
+        # FLip sprite image if necessary
+        if target[0] < WIDTH // 2 and not self.flipped:
+            self.flipped = True
+            self.image_orig = pg.transform.flip(self.image_orig, False, True)
+        elif target[0] > WIDTH // 2 and self.flipped: 
+            self.flipped = False
+            self.image_orig = pg.transform.flip(self.image_orig, False, True)
+
+        self.image, self.rect = rotate_img_on_pivot(self.image_orig, self.angle, Vector2(self.pivot), Vector2(self.pos))
+    
+    def update(self):
+        if not self.enabled:
+                self.image = self.image.copy()
+                self.image.fill((255, 255, 255, 0), special_flags=pg.BLEND_RGBA_MULT)
+        else:
+            self.image = self.image_orig
+            # Stick to player
+            self.pivot = Vector2(self.holder.rect.center)
+            self.pos = self.pivot + (20, 0)
+            self.x, self.y = self.pos
+            self.rotate(Vector2(pg.mouse.get_pos()))
+    
+    def shoot(self, color):
+        for i in range(100):
+            Particle(self.game, *(Vector2(self.pivot) + self.offset), 30, 350, 360, 1, rand.choice([RED, YELLOW, ORANGE]))
+
