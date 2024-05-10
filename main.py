@@ -56,8 +56,10 @@ class Game:
         self.shotgun_reload.set_volume(0.1)
         self.purchase_sound = pg.mixer.Sound(os.path.join(self.soundDir, 'purchase.mp3'))
         self.purchase_sound.set_volume(0.1)
+        self.slow_gunshot = pg.mixer.Sound(os.path.join(self.soundDir, 'slow-gun.mp3'))
+        self.slow_gunshot.set_volume(0.1)
         self.music = pg.mixer.music.load(os.path.join(self.soundDir, 'music4.mp3'))
-        pg.mixer.music.set_volume(0.2)
+        pg.mixer.music.set_volume(0.08)
         # Reading map data from file
         with open(os.path.join(game_folder, 'map.txt'), 'r') as f:
             for line in f:
@@ -138,10 +140,16 @@ class Game:
             img = weapon.img_overlay.copy()
             img_rect = img.get_rect(center=box.center)
             self.screen.blit(img, img_rect)
+        for i, grenade in enumerate(self.player1.explosives):
+            box = pg.draw.rect(self.screen, GREEN if grenade.enabled else LIGHTGRAY, (20 + 80*i, HEIGHT - 160, 60, 60), 3)
+            img = grenade.img_overlay.copy()
+            img_rect = img.get_rect(center=box.center)
+            self.screen.blit(img, img_rect)
 
     # Method to draw ammo overlays
     def drawAmmoOverlay(self):
         weapon = self.player1.activeWeapon
+        if not hasattr(weapon, 'reloading'): return
         if weapon.reloading:
             pg.draw.rect(self.screen, LIGHTGRAY, pg.Rect(WIDTH-90, HEIGHT-25, 80, 10))
             pg.draw.rect(self.screen, WHITE, pg.Rect(WIDTH-90, HEIGHT-25, weapon.reloadTimeLeft/weapon.reloadDur*80, 10))
@@ -200,22 +208,12 @@ class Game:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 self.quit()
-            # If user presses key
-            # if event.type == pg.KEYDOWN:
-            #     # Check input and move character based on input
-            #     match event.key:
-            #         # Move left
-            #         case pg.K_a | pg.K_LEFT:
-            #             self.player1.move(dx=-1)
-            #         # Move right
-            #         case pg.K_d | pg.K_RIGHT:
-            #             self.player1.move(dx=1)
-            #         # Move down
-            #         case pg.K_s | pg.K_DOWN:
-            #             self.player1.move(dy=1)
-            #         # Move up
-            #         case pg.K_w | pg.K_UP:
-            #             self.player1.move(dy=-1)
+            if event.type == pg.KEYUP:
+                if event.key == pg.K_LSHIFT:
+                    self.player1.grenade_mode = False
+                    self.player1.activeWeapon.enabled = False
+                    self.player1.activeWeapon = self.player1.loadout[0]
+                    self.player1.activeWeapon.enabled = True
                 
     # Method to show the start screen
     def show_start_screen(self):
