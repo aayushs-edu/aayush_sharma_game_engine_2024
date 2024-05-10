@@ -212,7 +212,7 @@ class Game:
                 if event.key == pg.K_LSHIFT:
                     self.player1.grenade_mode = False
                     self.player1.activeWeapon.enabled = False
-                    self.player1.activeWeapon = self.player1.prevWeapon
+                    self.player1.activeWeapon = self.player1.loadout[0]
                     self.player1.activeWeapon.enabled = True
                 
     # Method to show the start screen

@@ -368,9 +368,10 @@ class Bullet(pg.sprite.Sprite):
                     Particle(self.game, self.x, self.y, 25, 200, 360, 1, YELLOW)
 
 class Grenade(pg.sprite.Sprite):
-    def __init__(self, game, holder) -> None:
+    def __init__(self, game, holder, radius, damage) -> None:
         self.game = game
         self.holder = holder
+        self.target = None
         
         # Initialize sprite superclass
         pg.sprite.Sprite.__init__(self, game.all_sprites, game.active_sprites)
@@ -393,6 +394,14 @@ class Grenade(pg.sprite.Sprite):
         self.disabledLifetime = 1
         self.flipped = False
         self.angle = 0
+
+        # Set detonation attributes
+        self.detonate_time = 2
+        self.detonate_timer = self.detonate_time
+        self.detonating = False
+        self.radius = radius
+        self.damage = damage
+
     
     def rotate(self, target):
         self.offset = Vector2(target) - (WIDTH // 2, HEIGHT // 2)
@@ -415,6 +424,26 @@ class Grenade(pg.sprite.Sprite):
         self.image, self.rect = rotate_img_on_pivot(self.image_orig, self.angle, Vector2(self.pivot), Vector2(self.pos))
     
     def update(self):
+        if self.detonating:
+            if not (abs(self.offset.x) <= TILESIZE and abs(self.offset.y) <= TILESIZE):
+                self.offset = self.target - (self.x, self.y)
+                self.x += 0.2*self.offset.x
+                self.y += 0.2*self.offset.y
+                self.rect.x = self.x
+                self.rect.y = self.y
+
+            self.detonate_timer -= self.game.dt
+            if self.detonate_timer <= 0:
+                for mob in self.game.mobs.sprites():
+                    dist = Vector2(mob.rect.center).distance_to(Vector2(self.x, self.y))
+                    if dist <= self.radius:
+                        mob.hitpoints -= self.damage
+                self.detonating = False
+                self.kill()
+            elif self.detonate_timer <= 0.5:
+                for i in range(100):
+                    Particle(self.game, self.x, self.y, 30, self.radius*2, 360, 1, rand.choice([RED, YELLOW, ORANGE]), orientation=rand.randint(0, 360))
+            return
         if not self.enabled:
                 self.image = self.image.copy()
                 self.image.fill((255, 255, 255, 0), special_flags=pg.BLEND_RGBA_MULT)
@@ -427,6 +456,6 @@ class Grenade(pg.sprite.Sprite):
             self.rotate(Vector2(pg.mouse.get_pos()))
     
     def shoot(self, color):
-        for i in range(100):
-            Particle(self.game, *(Vector2(self.pivot) + self.offset), 30, 350, 360, 1, rand.choice([RED, YELLOW, ORANGE]))
+        if not self.detonating: self.detonating = True
+        self.target = pg.mouse.get_pos() + self.game.camera.offset
 

@@ -108,8 +108,8 @@ class Mob(pg.sprite.Sprite):
     # Function to handle death of the mob
     def die(self):
         # Create particle effect
-        for _ in range(20):
-            Particle(self.game, self.x, self.y, 20, 120, 360, 2, RED)
+        for _ in range(60):
+            Particle(self.game, self.x, self.y, 40, 120, 360, 2, RED)
         # Mark weapon as dead
         self.weapon.dead = True
         # Remove mob from all groups

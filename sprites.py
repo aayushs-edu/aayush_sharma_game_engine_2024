@@ -68,7 +68,10 @@ class Player(pg.sprite.Sprite):
             Pistol(self.game, self, 'Mouse', PISTOL_COOLDOWN)
         ]
         self.explosives : list[Grenade] = [
-            Grenade(self.game, self)
+            Grenade(self.game, self, 300, 150),
+            Grenade(self.game, self, 300, 150),
+            Grenade(self.game, self, 300, 150),
+            Grenade(self.game, self, 300, 150),
         ]
         self.grenade_mode = False
         self.activeWeapon = self.loadout[0]
@@ -199,7 +202,30 @@ class Player(pg.sprite.Sprite):
         if keys[pg.K_f]:
             self.game.rot = 5
         if clicks[0]:
-            self.activeWeapon.shoot(ORANGE)
+            if self.grenade_mode:
+                if hasattr(self.prevWeapon, 'detonating'):
+                    if not self.prevWeapon.detonating:
+                        self.activeWeapon.shoot(ORANGE)
+                        self.activeWeapon.enabled = False
+                        self.prevWeapon = self.explosives.pop(0)
+                        if self.explosives:
+                            self.activeWeapon = self.explosives[0]
+                        else:
+                            self.grenade_mode = False
+                            self.activeWeapon = self.loadout[0]
+                        self.activeWeapon.enabled = True
+                else:
+                    self.activeWeapon.shoot(ORANGE)
+                    self.activeWeapon.enabled = False
+                    self.prevWeapon = self.explosives.pop(0)
+                    if self.explosives:
+                        self.activeWeapon = self.explosives[0]
+                    else:
+                        self.grenade_mode = False
+                        self.activeWeapon = self.loadout[0]
+                    self.activeWeapon.enabled = True
+            else:
+                self.activeWeapon.shoot(ORANGE)
         # Drop weapon
         if keys[pg.K_q]:
             if self.activeWeapon in self.loadout: self.loadout.remove(self.activeWeapon)
@@ -216,7 +242,7 @@ class Player(pg.sprite.Sprite):
             self.activeWeapon.enabled = True
             self.pickupWeapon = None
         # Grenade
-        if keys[pg.K_LSHIFT] and not self.grenade_mode:
+        if keys[pg.K_LSHIFT] and not self.grenade_mode and self.explosives:
             self.grenade_mode = True
             self.prevWeapon = self.activeWeapon
             self.activeWeapon.enabled = False

@@ -9,7 +9,7 @@ from math import floor
 # Defining the Particle class
 class Particle(Sprite):
     # Constructor method
-    def __init__(self, game, x, y, maxSize, maxDist, maxAngle, dur, color, randSize=True, decay=True, fade=False):
+    def __init__(self, game, x, y, maxSize, maxDist, maxAngle, dur, color, randSize=True, decay=True, fade=False, orientation=0):
         # Assigning sprite groups
         self.groups = game.all_sprites, game.active_sprites, game.particles
         # Initializing superclass
@@ -21,7 +21,7 @@ class Particle(Sprite):
             dim = rand.random() * maxSize
         else:
             dim = maxSize
-        self.image = pg.Surface((dim, dim))
+        self.image = pg.transform.rotate(pg.Surface((dim, dim)), orientation)
         self.fade = fade
         self.decay = decay
         self.x = x
