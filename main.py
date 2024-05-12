@@ -11,13 +11,16 @@ import numpy as np
 import sys
 import os
 
+# Multiplayer
+from network import Network
+
 # Creating the game class
 class Game:
     # Initializer -- sets up the game
     def __init__(self):
         # Initializes pygame
         pg.init()
-        pg.mixer.init()
+        # pg.mixer.init()
         # Settings -- set canvas width, height, and title
         self.screen = pg.display.set_mode((WIDTH, HEIGHT)) 
         pg.display.set_caption(TITLE)
@@ -63,14 +66,14 @@ class Game:
         self.music = pg.mixer.music.load(os.path.join(self.soundDir, 'music4.mp3'))
         pg.mixer.music.set_volume(0.08)
         # Reading map data from file
-        with open(os.path.join(game_folder, 'map.txt'), 'r') as f:
+        with open(os.path.join(game_folder, 'boss_map.txt'), 'r') as f:
             for line in f:
                 self.map_data.append(line)
     
     # Method to initialize a new game
-    def new(self):
+    def new(self, player1pos, player2pos):
         # Playing background music
-        pg.mixer.music.play(-1)
+        # pg.mixer.music.play(-1)
         
         # Creating sprite groups
         self.all_sprites = pg.sprite.Group()
@@ -84,14 +87,21 @@ class Game:
         self.particles = pg.sprite.Group()
         self.player = pg.sprite.Group()
         self.cameras = pg.sprite.Group()
+
+
         # Iterating over map data to create game objects
+        self.player1 = Player(self, *player1pos, GREEN)
+        self.player2 = Player(self, *player2pos, RED)
+        
+        self.camera = CameraGroup(self)
         for row, tiles in enumerate(self.map_data):
             for col, tile in enumerate(tiles):
-                if tile == '1':
+                if tile == 'W':
                     Wall(self, col, row)
-                if tile == 'P':
-                    self.player1 = Player(self, col, row)
-                    self.camera = CameraGroup(self)
+                # if tile == '1':
+                #     self.player1 = Player(self, col, row)
+                # if tile == '2':
+                #     self.player2 = Player(self, col, row)
                 if tile == 'C':
                     Coin(self, col, row, 0)
                 if tile == 'U':
@@ -112,6 +122,7 @@ class Game:
                     Slowmo(self, col, row, 0)
                 if tile == 's':
                     self.shop = Shop(self, col, row)
+        
     
     # Method to draw game elements
     def draw(self):
@@ -171,6 +182,11 @@ class Game:
         self.playing = True
         while self.playing:
             self.dt = self.clock.tick(FPS) / 1000
+
+            p2Pos = read_pos(n.send(make_pos((self.player1.rect.x, self.player1.rect.y))))
+            self.player2.x = p2Pos[0]
+            self.player2.y = p2Pos[1]
+
             self.events()
             self.update()
             self.draw()
@@ -238,27 +254,25 @@ class Game:
                 loc2 = Vector2(WIDTH/2, HEIGHT/2) + Vector2(0, 150).rotate(rot)
                 pg.draw.rect(self.screen, WHITE, pg.Rect(loc2.x, loc2.y, 30, 30))
                 pg.display.flip()
-        
 
-    # Method to wait for a key press
-    # def wait_for_key(self):
-    #     waiting = True
-    #     while waiting:
-    #         self.clock.tick(FPS)
-    #         for event in pg.event.get():
-    #             if event.type == pg.QUIT:
-    #                 waiting = False
-    #                 self.quit()
-    #             if event.type == pg.KEYUP:
-    #                 waiting = False
-    #     return not waiting
+# Networking methods
+def read_pos(str):
+    str = str.split(",")
+    return int(str[0]), int(str[1])
+
+def make_pos(tup):
+    return str(tup[0]) + "," + str(tup[1])
+
+# Create network
+n = Network()
+startPos = read_pos(n.getPos())
 
 # Create a new game
 g = Game()
 # Run the game
 g.show_start_screen()
 while True:
-    g.new()
+    g.new(startPos, (0, 0))
     g.run()
     # g.show_go_screen()
 g.run()

@@ -32,7 +32,7 @@ class Spritesheet:
 # Player Sprite -- inherits from pygame Sprite class
 class Player(pg.sprite.Sprite):
     # Init Player
-    def __init__(self, game, x, y):
+    def __init__(self, game, x, y, color):
         self.groups = game.all_sprites, game.player, game.active_sprites
         # init superclass
         pg.sprite.Sprite.__init__(self, self.groups)
@@ -41,8 +41,8 @@ class Player(pg.sprite.Sprite):
         # Set dimensions 
         self.image = pg.Surface((TILESIZE, TILESIZE))
         # Give color
-        self.image.fill(GREEN)
-        self.color = GREEN
+        self.image.fill(color)
+        self.color = color
         # Rectangular area of player
         self.rect = self.image.get_rect()
 
