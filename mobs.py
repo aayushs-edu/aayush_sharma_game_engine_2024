@@ -28,7 +28,8 @@ class Mob(pg.sprite.Sprite):
         self.rect = self.image.get_rect(center=(self.x, self.y))
 
         # Set initial properties
-        self.speed = speed
+        self.norm_speed = speed
+        self.speed = self.norm_speed
         self.max_hitpoints = hitpoints
         self.hitpoints = hitpoints
         # Assign weapon based on input

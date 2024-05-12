@@ -142,9 +142,10 @@ class Game:
             img = weapon.img_overlay.copy()
             img_rect = img.get_rect(center=box.center)
             self.screen.blit(img, img_rect)
-        for i, grenade in enumerate(self.player1.explosives):
-            box = pg.draw.rect(self.screen, GREEN if grenade.enabled else LIGHTGRAY, (20 + 80*i, HEIGHT - 160, 60, 60), 3)
-            img = grenade.img_overlay.copy()
+        if self.player1.explosives:
+            box = pg.draw.rect(self.screen, GREEN if self.player1.explosives[0].enabled else LIGHTGRAY, (20, HEIGHT - 160, 60, 60), 3)
+            img = self.player1.explosives[0].img_overlay.copy()
+            self.draw_text(self.screen, str(len(self.player1.explosives)), 'space.ttf', 12, WHITE, box.centerx + 20, box.centery + 20)
             img_rect = img.get_rect(center=box.center)
             self.screen.blit(img, img_rect)
 

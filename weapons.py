@@ -313,7 +313,8 @@ class Bullet(pg.sprite.Sprite):
         self.color = color
 
         self.angle = angle
-        self.speed = speed
+        self.norm_speed = speed
+        self.speed = self.norm_speed
         self.damage = damage
         self.trail = trail
         self.dur = dur
@@ -443,6 +444,7 @@ class Grenade(pg.sprite.Sprite):
             elif self.detonate_timer <= 0.5:
                 pg.mixer.Sound.play(self.game.explosion)
                 for i in range(100):
+                    Particle(self.game, self.x, self.y, 30, self.radius*2, 360, 1, rand.choice([RED, YELLOW, ORANGE]), fade=True)
                     Particle(self.game, self.x, self.y, 30, self.radius*2, 360, 1, rand.choice([RED, YELLOW, ORANGE]), orientation=rand.randint(0, 90))
             return
         if not self.enabled:

@@ -46,7 +46,8 @@ class Player(pg.sprite.Sprite):
         # Rectangular area of player
         self.rect = self.image.get_rect()
 
-        self.speed = 300
+        self.norm_speed = 300
+        self.speed = self.norm_speed
         self.max_hitpoints = 1000
         self.hitpoints = self.max_hitpoints
         self.dashing = False
@@ -424,7 +425,7 @@ class Slowmo(PowerUp):
         self.game.slowmo = False
         for sprite in self.game.active_sprites.sprites():
             if hasattr(sprite, 'speed'):
-                sprite.speed *= 2
+                sprite.speed = sprite.norm_speed
         
 
 # Inherits from PowerUp
