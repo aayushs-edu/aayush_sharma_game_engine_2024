@@ -9,7 +9,7 @@ from math import floor
 # Defining the Particle class
 class Particle(Sprite):
     # Constructor method
-    def __init__(self, game, x, y, maxSize, maxDist, maxAngle, dur, color, randSize=True, decay=True, fade=False, orientation=0):
+    def __init__(self, game, x, y, maxSize, maxDist, maxAngle, dur, color, randSize=True, decay=True, fade=False, rotate=True):
         # Assigning sprite groups
         self.groups = game.all_sprites, game.active_sprites, game.particles
         # Initializing superclass
@@ -21,7 +21,8 @@ class Particle(Sprite):
             dim = rand.random() * maxSize
         else:
             dim = maxSize
-        self.image = pg.transform.rotate(pg.Surface((dim, dim)), orientation)
+        self.image = pg.Surface((dim, dim))
+        self.original_img = self.image
         self.fade = fade
         self.decay = decay
         self.x = x
@@ -41,6 +42,9 @@ class Particle(Sprite):
         self.norm_speed = 1
         self.speed = self.norm_speed
 
+        self.rotate = rotate
+        self.rot = 0
+
     # Update method
     def update(self):
         # If particle still exists and has non-zero dimensions
@@ -59,10 +63,15 @@ class Particle(Sprite):
             self.rect.x = self.x
             self.rect.y = self.y
 
+            if self.rotate:
+                self.rot += 1
+                self.image = pg.transform.rotate(self.original_img, self.rot)
+                self.rect = self.image.get_rect(center=self.rect.center)
+
             # Scale down particle size over time
             if self.decay:
                 self.image=pg.transform.scale(self.image, (max(0, self.image.get_width()-self.dur/(50 + 10*self.game.slowmo)), 
-                                                        max(0, self.image.get_height()-self.dur/(50 + 10*self.game.slowmo))))
+                                                    max(0, self.image.get_height()-self.dur/(50 + 10*self.game.slowmo))))
         else:
             # Kill the particle if duration is over
             self.kill()

@@ -443,7 +443,7 @@ class Grenade(pg.sprite.Sprite):
                 self.kill()
             elif self.detonate_timer <= 0.5:
                 for i in range(100):
-                    Particle(self.game, self.x, self.y, 30, self.radius*2, 360, 1, rand.choice([RED, YELLOW, ORANGE]), orientation=rand.randint(0, 360))
+                    Particle(self.game, self.x, self.y, 30, self.radius*2, 360, 1, rand.choice([RED, YELLOW, ORANGE]), fade=True)
             return
         if not self.enabled:
                 self.image = self.image.copy()
