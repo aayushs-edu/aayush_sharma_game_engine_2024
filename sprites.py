@@ -158,7 +158,7 @@ class Player(pg.sprite.Sprite):
                     p.disable()
                     self.powerups.remove(p)
         else:
-            self.image.fill(GREEN)
+            self.image.fill(self.color)
             self.powered_up = False
 
         # Handle dashing
