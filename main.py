@@ -18,6 +18,9 @@ from network import Network
 class Game:
     # Initializer -- sets up the game
     def __init__(self):
+        print('Game created')
+
+    def init(self):
         # Initializes pygame
         pg.init()
         # pg.mixer.init()
@@ -71,7 +74,7 @@ class Game:
                 self.map_data.append(line)
     
     # Method to initialize a new game
-    def new(self, player1pos, player2pos):
+    def new(self, p1Pos, p2Pos):
         # Playing background music
         # pg.mixer.music.play(-1)
         
@@ -90,8 +93,8 @@ class Game:
 
 
         # Iterating over map data to create game objects
-        self.player1 = Player(self, *player1pos, GREEN)
-        self.player2 = Player(self, *player2pos, RED)
+        self.player1 = Player(self, *p1Pos)
+        self.player2 = Player(self, *p2Pos)
         
         self.camera = CameraGroup(self)
         for row, tiles in enumerate(self.map_data):
@@ -183,9 +186,7 @@ class Game:
         while self.playing:
             self.dt = self.clock.tick(FPS) / 1000
 
-            p2Pos = read_pos(n.send(make_pos((self.player1.rect.x, self.player1.rect.y))))
-            self.player2.x = p2Pos[0]
-            self.player2.y = p2Pos[1]
+            self.player2 = n.send(self.player1)
 
             self.events()
             self.update()
@@ -255,7 +256,6 @@ class Game:
                 pg.draw.rect(self.screen, WHITE, pg.Rect(loc2.x, loc2.y, 30, 30))
                 pg.display.flip()
 
-# Networking methods
 def read_pos(str):
     str = str.split(",")
     return int(str[0]), int(str[1])
@@ -265,14 +265,15 @@ def make_pos(tup):
 
 # Create network
 n = Network()
-startPos = read_pos(n.getPos())
+p1Pos = read_pos(n.getP())
 
 # Create a new game
 g = Game()
+g.init()
 # Run the game
-g.show_start_screen()
+# g.show_start_screen()
 while True:
-    g.new(startPos, (0, 0))
+    g.new(p1Pos, (5, 10))
     g.run()
     # g.show_go_screen()
 g.run()

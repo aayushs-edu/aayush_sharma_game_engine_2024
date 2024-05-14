@@ -33,6 +33,7 @@ class Spritesheet:
 class Player(pg.sprite.Sprite):
     # Init Player
     def __init__(self, game, x, y, color):
+        
         self.groups = game.all_sprites, game.player, game.active_sprites
         # init superclass
         pg.sprite.Sprite.__init__(self, self.groups)
