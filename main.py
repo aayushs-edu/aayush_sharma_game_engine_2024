@@ -93,8 +93,8 @@ class Game:
 
 
         # Iterating over map data to create game objects
-        self.player1 = Player(self, *p1Pos)
-        self.player2 = Player(self, *p2Pos)
+        self.player1 = Player(self, *p1Pos, GREEN)
+        self.player2 = Player(self, *p2Pos, RED)
         
         self.camera = CameraGroup(self)
         for row, tiles in enumerate(self.map_data):
@@ -186,7 +186,7 @@ class Game:
         while self.playing:
             self.dt = self.clock.tick(FPS) / 1000
 
-            self.player2 = n.send(self.player1)
+            self.player2.load_data(n.send(self.player1.get_data()))
 
             self.events()
             self.update()
@@ -257,6 +257,7 @@ class Game:
                 pg.display.flip()
 
 def read_pos(str):
+    if not str: return
     str = str.split(",")
     return int(str[0]), int(str[1])
 
@@ -273,7 +274,7 @@ g.init()
 # Run the game
 # g.show_start_screen()
 while True:
-    g.new(p1Pos, (5, 10))
+    g.new(p1Pos, (10, 10))
     g.run()
     # g.show_go_screen()
 g.run()

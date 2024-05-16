@@ -72,6 +72,15 @@ class Gun(pg.sprite.Sprite):
         self.reload_sound = reload_sound
         pg.mixer.Sound.play(self.game.gun_cock)
 
+    def get_data(self):
+        return {
+            'angle': self.angle,
+        }
+    
+    def load_data(self, data : dict):
+        if data.__class__.__name__ != 'dict': return
+        self.angle = data.get('angle')
+
     def update(self):
         # Update recoil
         if self.recoiling:

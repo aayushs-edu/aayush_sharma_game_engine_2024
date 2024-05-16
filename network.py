@@ -4,7 +4,7 @@ import pickle
 class Network:
     def __init__(self):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server = "192.168.86.224"
+        self.server = socket.gethostbyname(socket.gethostname())
         self.port = 5555
         self.addr = (self.server, self.port)
         self.p = self.connect()
@@ -15,7 +15,7 @@ class Network:
     def connect(self):
         try:
             self.client.connect(self.addr)
-            return pickle.loads(self.client.recv(2048))
+            return self.client.recv(2048).decode()
         except:
             pass
 

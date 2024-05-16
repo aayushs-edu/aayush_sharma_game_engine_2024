@@ -4,7 +4,7 @@ import sys
 import pickle
 
 
-server = "192.168.86.224"
+server = socket.gethostbyname(socket.gethostname())
 port = 5555
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -14,12 +14,13 @@ try:
 except socket.error as e:
     print(str(e))
 
-s.listen(2)
+s.listen(4)
 print("Waiting for a connection, Server Started")
 
 # Player positions
 # players = []
-players = []
+players = [(10, 10), (20, 20)]
+currentPlayer = 0
 
 # Networking methods
 def read_pos(str):
@@ -30,10 +31,14 @@ def make_pos(tup):
     return str(tup[0]) + "," + str(tup[1])
 
 def threaded_client(conn : socket.socket, player):
+
+    global currentPlayer
     
-    conn.send(pickle.dumps(players[player]))
+    info = make_pos(players[player]) if players[player].__class__.__name__ == 'tuple' else players[player]
+    conn.send(str.encode(info))
+
     reply = ""
-    
+    print(f'Client {player} connected.')
     while True:
         try:
             data = pickle.loads(conn.recv(2048))
@@ -48,17 +53,18 @@ def threaded_client(conn : socket.socket, player):
                 else:
                     reply = players[1]
 
-                print("Received: ", data)
-                print("Sending : ", reply)
+                # print("Received: ", data)
+                # print("Sending : ", reply)
 
             conn.sendall(pickle.dumps(reply))
         except:
             break
 
     print("Lost connection")
+    currentPlayer -= 1
     conn.close()
 
-currentPlayer = 0
+
 while True:
     conn, addr = s.accept()
     print("Connected to:", addr)

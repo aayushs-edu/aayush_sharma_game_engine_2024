@@ -60,7 +60,7 @@ class Player(pg.sprite.Sprite):
         # self.load_images()
         # self.image = self.standing_frames[0]
 
-        self.vx, vy = 0, 0
+        self.vx, self.vy = 0, 0
         self.x = x * TILESIZE
         self.y = y * TILESIZE
 
@@ -85,22 +85,37 @@ class Player(pg.sprite.Sprite):
 
         self.current_frame = 0
         self.last_update = 0
-
-    def load_images(self):
-        self.standing_frames = [self.spritesheet.get_image(0, 0, TILESIZE, TILESIZE),
-                                self.spritesheet.get_image(32, 0, TILESIZE, TILESIZE)]
-        for frame in self.standing_frames:
-            frame.set_colorkey((0, 0, 0))
     
-    def animate(self):
-        now = pg.time.get_ticks()
-        if now - self.last_update > 500:
-            self.last_update = now
-            self.current_frame = (self.current_frame + 1) % len(self.standing_frames)
-            bottom = self.rect.bottom
-            self.image = self.standing_frames[self.current_frame]
-            self.rect = self.image.get_rect()
-            self.rect.bottom = bottom
+    def get_data(self) -> dict:
+        return {
+            'x': self.x,
+            'y': self.y,
+            'hitpoints': self.hitpoints,
+            'moneybag': self.moneybag,
+            'powerups': self.powerups,
+            'powered_up': self.powered_up,
+            'weapon' : self.activeWeapon.get_data(),
+            # 'loadout': self.loadout,
+            # 'explosives': self.explosives,	
+            # 'activeWeapon': self.activeWeapon,
+            # 'prevWeapon': self.prevWeapon,
+            'grenade_mode': self.grenade_mode
+        }   
+    
+    def load_data(self, data : dict):
+        if data.__class__.__name__ != 'dict': return
+        self.x = data.get('x')
+        self.y = data.get('y')
+        self.hitpoints = data.get('hitpoints')
+        self.moneybag = data.get('moneybag')
+        self.powerups = data.get('powerups')
+        self.powered_up = data.get('powered_up')
+        self.activeWeapon.load_data(data.get('weapon'))
+        # self.loadout = data.get('loadout')
+        # self.explosives = data.get('explosives')
+        # self.activeWeapon = data.get('activeWeapon')
+        # self.prevWeapon = data.get('prevWeapon')
+        self.grenade_mode = data.get('grenade_mode')
     
     # Function to handle collision with walls
     def collide_with_walls(self, dir):
