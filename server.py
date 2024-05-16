@@ -15,7 +15,7 @@ except socket.error as e:
     print(str(e))
 
 s.listen(4)
-print("Waiting for a connection, Server Started")
+print(f"Waiting for a connection, Server Started at {server}")
 
 # Player positions
 # players = []
@@ -34,8 +34,7 @@ def threaded_client(conn : socket.socket, player):
 
     global currentPlayer
     
-    info = make_pos(players[player]) if players[player].__class__.__name__ == 'tuple' else players[player]
-    conn.send(str.encode(info))
+    conn.send(str.encode(make_pos(players[player]))) if players[player].__class__.__name__ == 'tuple' else conn.send(pickle.dumps(players[player]))
 
     reply = ""
     print(f'Client {player} connected.')
