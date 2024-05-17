@@ -34,6 +34,7 @@ class Gun(pg.sprite.Sprite):
         # Set image and attributes
         self.img_overlay = img
         self.image_orig = img
+        self.flipped_img = pg.transform.flip(self.image_orig, False, True)
         self.image = self.image_orig
         
         # Set position
@@ -141,14 +142,14 @@ class Gun(pg.sprite.Sprite):
                 self.angle += (angle - self.angle) / 2
             else:
                 self.angle = angle
-
-        # FLip sprite image if necessary
-        if target[0] < WIDTH // 2 and not self.flipped:
-            self.flipped = True
-            self.image_orig = pg.transform.flip(self.image_orig, False, True)
-        elif target[0] > WIDTH // 2 and self.flipped: 
-            self.flipped = False
-            self.image_orig = pg.transform.flip(self.image_orig, False, True)
+            print(self.angle)
+            # FLip sprite image if necessary
+            if self.angle < -90 or self.angle > 90:
+                self.flipped = True
+                self.image = self.flipped_img
+            elif -90 < self.angle < 90: 
+                self.flipped = False
+                self.image = self.image_orig
 
         # Rotate shooting point and apply rotation to image
         self.shooting_point = rotate_point_on_pivot(self.angle, 

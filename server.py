@@ -18,6 +18,7 @@ print(f"Waiting for a connection, Server Started at {server}")
 
 # Player positions
 # players = []
+player_pos = [(10, 10), (20, 20)]
 players = [(10, 10), (20, 20)]
 currentPlayer = 0
 
@@ -33,7 +34,7 @@ def threaded_client(conn : socket.socket, player):
 
     global currentPlayer
     
-    conn.send(str.encode(make_pos(players[player]))) if players[player].__class__.__name__ == 'tuple' else conn.send(pickle.dumps(players[player]))
+    conn.send(str.encode(make_pos(player_pos[player]))) if player_pos[player].__class__.__name__ == 'tuple' else conn.send(pickle.dumps(players[player]))
     reply = ""
     print(f'Client {player} connected.')
     while True:
