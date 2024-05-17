@@ -216,7 +216,7 @@ class Player(pg.sprite.Sprite):
         keys = pg.key.get_pressed()
         if keys[pg.K_f]:
             self.game.rot = 5
-        if clicks[0]:
+        if clicks[0] and self.controllable:
             if self.grenade_mode:
                 if hasattr(self.prevWeapon, 'detonating'):
                     if not self.prevWeapon.detonating:
@@ -240,7 +240,7 @@ class Player(pg.sprite.Sprite):
                         self.activeWeapon = self.loadout[0]
                     self.activeWeapon.enabled = True
             else:
-                self.activeWeapon.shoot(ORANGE)
+                if self.controllable: self.activeWeapon.shoot(ORANGE)
         # Drop weapon
         if keys[pg.K_q]:
             if self.activeWeapon in self.loadout: self.loadout.remove(self.activeWeapon)
