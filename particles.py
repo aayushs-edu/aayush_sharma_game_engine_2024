@@ -65,12 +65,12 @@ class Particle(Sprite):
 
             # Scale down particle size over time
             if self.decay:
-                self.new_image=pg.transform.scale(self.image.copy(), (max(0, self.image.get_width()-self.dur/(50 + 10*self.game.slowmo)), 
+                self.image=pg.transform.scale(self.image, (max(0, self.image.get_width()-self.dur/(50 + 10*self.game.slowmo)), 
                                                     max(0, self.image.get_height()-self.dur/(50 + 10*self.game.slowmo))))
 
-            if self.rotate:
-                self.image = pg.transform.rotate(self.new_image, self.rot)
-                self.rect = self.image.get_rect(center=self.rect.center)
+            # if self.rotate:
+            #     self.image = pg.transform.rotate(self.new_image, self.rot)
+            #     self.rect = self.image.get_rect(center=self.rect.center)
 
             
         else:

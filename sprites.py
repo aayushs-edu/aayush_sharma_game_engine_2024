@@ -32,7 +32,7 @@ class Spritesheet:
 # Player Sprite -- inherits from pygame Sprite class
 class Player(pg.sprite.Sprite):
     # Init Player
-    def __init__(self, game, x, y, color):
+    def __init__(self, game, x, y, color, controllable=True):
         
         self.groups = game.all_sprites, game.player, game.active_sprites
         # init superclass
@@ -56,9 +56,7 @@ class Player(pg.sprite.Sprite):
         self.dashCooldown = 1
         self.dashCoolLeft = 0
 
-        # self.spritesheet = Spritesheet(path.join(img_folder, 'theBell.png'))
-        # self.load_images()
-        # self.image = self.standing_frames[0]
+        self.controllable = controllable
 
         self.vx, self.vy = 0, 0
         self.x = x * TILESIZE
@@ -67,7 +65,7 @@ class Player(pg.sprite.Sprite):
         self.moneybag = 0
         # Loadout as a list of weapons
         self.loadout : list[Gun] = [
-            Pistol(self.game, self, 'Mouse', PISTOL_COOLDOWN)
+            Pistol(self.game, self, 'Mouse' if self.controllable else 'Idle', PISTOL_COOLDOWN)
         ]
         self.explosives : list[Grenade] = [
             Grenade(self.game, self, 300, 150),

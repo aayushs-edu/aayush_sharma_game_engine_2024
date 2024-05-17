@@ -69,14 +69,14 @@ class Game:
         self.music = pg.mixer.music.load(os.path.join(self.soundDir, 'music4.mp3'))
         pg.mixer.music.set_volume(0.08)
         # Reading map data from file
-        with open(os.path.join(game_folder, 'boss_map.txt'), 'r') as f:
+        with open(os.path.join(game_folder, 'map.txt'), 'r') as f:
             for line in f:
                 self.map_data.append(line)
     
     # Method to initialize a new game
-    def new(self, p1Pos, p2Pos):
+    def new(self):
         # Playing background music
-        # pg.mixer.music.play(-1)
+        pg.mixer.music.play(-1)
         
         # Creating sprite groups
         self.all_sprites = pg.sprite.Group()
@@ -93,16 +93,16 @@ class Game:
 
 
         # Iterating over map data to create game objects
-        self.player1 = Player(self, *p1Pos, GREEN)
-        self.player2 = Player(self, *p2Pos, RED)
+        # self.player1 = Player(self, *p1Pos, GREEN)
+        # self.player2 = Player(self, *p2Pos, RED, controllable=False)
         
         self.camera = CameraGroup(self)
         for row, tiles in enumerate(self.map_data):
             for col, tile in enumerate(tiles):
                 if tile == 'W':
                     Wall(self, col, row)
-                # if tile == '1':
-                #     self.player1 = Player(self, col, row)
+                if tile == '1':
+                    self.player1 = Player(self, col, row, GREEN)
                 # if tile == '2':
                 #     self.player2 = Player(self, col, row)
                 if tile == 'C':
@@ -186,7 +186,7 @@ class Game:
         while self.playing:
             self.dt = self.clock.tick(FPS) / 1000
 
-            self.player2.load_data(n.send(self.player1.get_data()))
+            # self.player2.load_data(n.send(self.player1.get_data()))
 
             self.events()
             self.update()
@@ -265,8 +265,8 @@ def make_pos(tup):
     return str(tup[0]) + "," + str(tup[1])
 
 # Create network
-n = Network()
-p1Pos = read_pos(n.getP())
+# n = Network()
+# p1Pos = read_pos(n.getP())
 
 # Create a new game
 g = Game()
@@ -274,7 +274,7 @@ g.init()
 # Run the game
 # g.show_start_screen()
 while True:
-    g.new(p1Pos, (10, 10))
+    g.new()
     g.run()
     # g.show_go_screen()
 g.run()

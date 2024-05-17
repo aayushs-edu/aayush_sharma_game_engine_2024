@@ -110,6 +110,8 @@ class Gun(pg.sprite.Sprite):
                 # Rotate gun towards target
                 if self.target == 'Mouse':
                     self.rotate(Vector2(pg.mouse.get_pos()))
+                elif self.target == 'Idle':
+                    pass
                 else:
                     self.rotate(self.target.center)
 

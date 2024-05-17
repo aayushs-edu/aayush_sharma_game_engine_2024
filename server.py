@@ -1,6 +1,5 @@
 import socket
 from _thread import *
-import sys
 import pickle
 
 
@@ -14,7 +13,7 @@ try:
 except socket.error as e:
     print(str(e))
 
-s.listen(4)
+s.listen(1)
 print(f"Waiting for a connection, Server Started at {server}")
 
 # Player positions
@@ -35,7 +34,6 @@ def threaded_client(conn : socket.socket, player):
     global currentPlayer
     
     conn.send(str.encode(make_pos(players[player]))) if players[player].__class__.__name__ == 'tuple' else conn.send(pickle.dumps(players[player]))
-
     reply = ""
     print(f'Client {player} connected.')
     while True:
@@ -59,7 +57,7 @@ def threaded_client(conn : socket.socket, player):
         except:
             break
 
-    print("Lost connection")
+    print(f"Client {player} lost connection")
     currentPlayer -= 1
     conn.close()
 
