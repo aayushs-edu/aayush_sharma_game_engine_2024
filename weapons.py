@@ -73,18 +73,18 @@ class Gun(pg.sprite.Sprite):
         self.reload_sound = reload_sound
         pg.mixer.Sound.play(self.game.gun_cock)
 
-        self.shoot = False
+        self.shoot_b = False
 
     def get_data(self):
         return {
             'angle': self.angle,
-            'shoot': self.shoot
+            'shoot': self.shoot_b
         }
     
     def load_data(self, data : dict):
         if data.__class__.__name__ != 'dict': return
         self.angle = data.get('angle')
-        self.shoot = data.get('shoot')
+        self.shoot_b = data.get('shoot')
 
     def update(self):
         # Update recoil
@@ -106,6 +106,9 @@ class Gun(pg.sprite.Sprite):
                 self.image = self.image.copy()
                 self.image.fill((255, 255, 255, 0), special_flags=pg.BLEND_RGBA_MULT)
             else:
+                if self.shoot_b:
+                    self.shoot(self.holder.color)
+                    self.shoot_b = False
                 
                 self.image = self.image_orig
                 # Stick to player
@@ -164,7 +167,7 @@ class Gun(pg.sprite.Sprite):
         
     def shoot(self, color):
         # Fire bullet if conditions allow -- not cooling down, not reloading
-        if (self.target == 'Idle' and self.shoot) or (self.cool_dur <= 0 and not self.reloading):
+        if (self.target == 'Idle' and self.shoot_b) or (self.cool_dur <= 0 and not self.reloading):
             # Instantiate bullets
             Bullet(self.game, *self.shooting_point, self.angle, self.holder, color, self.damage, speed=(self.bullet_speed if not self.game.slowmo or self.holder.__class__.__name__ == 'Player' else self.bullet_speed/4))
             
@@ -186,8 +189,6 @@ class Gun(pg.sprite.Sprite):
 
             # Apply recoil
             self.angle += (-self.recoil if self.flipped else self.recoil)
-
-            self.shoot = False
     
     def fade(self):
         # Fade out the gun sprite
