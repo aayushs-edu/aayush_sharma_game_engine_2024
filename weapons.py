@@ -111,7 +111,7 @@ class Gun(pg.sprite.Sprite):
                 if self.target == 'Mouse':
                     self.rotate(Vector2(pg.mouse.get_pos()))
                 elif self.target == 'Idle':
-                    pass
+                    self.rotate('Idle')
                 else:
                     self.rotate(self.target.center)
 
@@ -128,18 +128,19 @@ class Gun(pg.sprite.Sprite):
 
     def rotate(self, target):
         # Calculate difference vector between holder and target
-        if self.holder.__class__.__bases__[0].__name__ == 'Mob':
-            offset = Vector2(self.target.center) - Vector2(self.pos)
-        else:
-            offset = Vector2(target) - (WIDTH // 2, HEIGHT // 2)
-        # Calculate angle between holder and target
-        angle = -math.degrees(math.atan2(offset.y, offset.x))
+        if target != 'Idle':
+            if self.holder.__class__.__bases__[0].__name__ == 'Mob':
+                offset = Vector2(self.target.center) - Vector2(self.pos)
+            else:
+                offset = Vector2(target) - (WIDTH // 2, HEIGHT // 2)
+            # Calculate angle between holder and target
+            angle = -math.degrees(math.atan2(offset.y, offset.x))
 
-        # Handle recoiling
-        if self.recoiling:
-            self.angle += (angle - self.angle) / 2
-        else:
-            self.angle = angle
+            # Handle recoiling
+            if self.recoiling:
+                self.angle += (angle - self.angle) / 2
+            else:
+                self.angle = angle
 
         # FLip sprite image if necessary
         if target[0] < WIDTH // 2 and not self.flipped:
