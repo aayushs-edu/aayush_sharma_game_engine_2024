@@ -240,7 +240,8 @@ class Player(pg.sprite.Sprite):
                         self.activeWeapon = self.loadout[0]
                     self.activeWeapon.enabled = True
             else:
-                if self.controllable: self.activeWeapon.shoot(ORANGE)
+                if self.controllable:
+                    self.activeWeapon.shoot(ORANGE)
         # Drop weapon
         if keys[pg.K_q]:
             if self.activeWeapon in self.loadout: self.loadout.remove(self.activeWeapon)

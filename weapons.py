@@ -106,10 +106,7 @@ class Gun(pg.sprite.Sprite):
                 self.image = self.image.copy()
                 self.image.fill((255, 255, 255, 0), special_flags=pg.BLEND_RGBA_MULT)
             else:
-                if self.target == 'Idle' and self.shoot_b:
-                    print('Player 2 shoot')
-                    self.shoot(ORANGE, p2=True)
-                    self.shoot_b = False
+
                 
                 self.image = self.image_orig
                 # Stick to player
@@ -124,6 +121,12 @@ class Gun(pg.sprite.Sprite):
                     self.rotate('Idle')
                 else:
                     self.rotate(self.target.center)
+
+                
+                if self.target == 'Idle' and self.shoot_b:
+                    print('Player 2 shoot')
+                    self.shoot(ORANGE, p2=True)
+                    self.shoot_b = False
 
                 # Cooldown
                 if self.cool_dur > 0:
@@ -168,7 +171,7 @@ class Gun(pg.sprite.Sprite):
         
     def shoot(self, color, p2=False):
         # Fire bullet if conditions allow -- not cooling down, not reloading
-        if p2 or (self.cool_dur <= 0 and not self.reloading):
+        if self.cool_dur <= 0 and not self.reloading:
             self.shoot_b = True
             # Instantiate bullets
             Bullet(self.game, *self.shooting_point, self.angle, self.holder, color, self.damage, speed=(self.bullet_speed if not self.game.slowmo or self.holder.__class__.__name__ == 'Player' else self.bullet_speed/4))
@@ -191,6 +194,8 @@ class Gun(pg.sprite.Sprite):
 
             # Apply recoil
             self.angle += (-self.recoil if self.flipped else self.recoil)
+        else:
+            self.shoot_b = False
     
     def fade(self):
         # Fade out the gun sprite
