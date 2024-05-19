@@ -125,7 +125,7 @@ class Gun(pg.sprite.Sprite):
                 
                 if self.target == 'Idle' and self.shoot_b:
                     print('Player 2 shoot')
-                    self.shoot(ORANGE, p2=True)
+                    self.shoot(ORANGE)
                     self.shoot_b = False
 
                 # Cooldown
@@ -169,13 +169,15 @@ class Gun(pg.sprite.Sprite):
                                                     -5 * (-1 if self.flipped else 1)))
         self.image, self.rect = rotate_img_on_pivot(self.image_orig, self.angle, Vector2(self.pivot), Vector2(self.pos))
         
-    def shoot(self, color, p2=False):
+    def shoot(self, color):
         # Fire bullet if conditions allow -- not cooling down, not reloading
         if self.cool_dur <= 0 and not self.reloading:
             self.shoot_b = True
             # Instantiate bullets
-            Bullet(self.game, *self.shooting_point, self.angle, self.holder, color, self.damage, speed=(self.bullet_speed if not self.game.slowmo or self.holder.__class__.__name__ == 'Player' else self.bullet_speed/4))
-            
+            if self.target == 'Idle':
+                Bullet(self.game, *self.shooting_point, ((self.angle + 32) if self.flipped else (self.angle - 32)), self.holder, color, self.damage, speed=(self.bullet_speed if not self.game.slowmo or self.holder.__class__.__name__ == 'Player' else self.bullet_speed/4))
+            else:
+                Bullet(self.game, *self.shooting_point, self.angle, self.holder, color, self.damage, speed=(self.bullet_speed if not self.game.slowmo or self.holder.__class__.__name__ == 'Player' else self.bullet_speed/4))
             # Particle trail
             pDir = -1 if self.flipped else 1
             for _ in range(10):
@@ -392,10 +394,10 @@ class Bullet(pg.sprite.Sprite):
                     Particle(self.game, self.x, self.y, 25, 200, 360, 1, YELLOW)
 
 class Grenade(pg.sprite.Sprite):
-    def __init__(self, game, holder, radius, damage) -> None:
+    def __init__(self, game, holder, radius, damage, target='Mouse') -> None:
         self.game = game
         self.holder = holder
-        self.target = None
+        self.target = target
         
         # Initialize sprite superclass
         pg.sprite.Sprite.__init__(self, game.all_sprites, game.active_sprites)
@@ -404,6 +406,7 @@ class Grenade(pg.sprite.Sprite):
         self.img_overlay = pg.transform.scale(pg.image.load('./assets/grenade.png').convert_alpha(), (TILESIZE, TILESIZE))
         self.image_orig = self.img_overlay
         self.image = self.image_orig
+        self.flipped_img = pg.transform.flip(self.image_orig, False, True)
         
         # Set position
         self.pivot = Vector2(self.holder.rect.center)
@@ -425,25 +428,37 @@ class Grenade(pg.sprite.Sprite):
         self.detonating = False
         self.radius = radius
         self.damage = damage
+        
+    def get_data(self):
+        return {
+            'angle': self.angle,
+            'shoot': self.shoot_b
+        }
+    
+    def load_data(self, data : dict):
+        if data.__class__.__name__ != 'dict': return
+        self.angle = data.get('angle')
+        self.shoot_b = data.get('shoot')
 
     
     def rotate(self, target):
-        self.offset = Vector2(target) - (WIDTH // 2, HEIGHT // 2)
+        if self.target != 'Idle':
+            self.offset = Vector2(target) - (WIDTH // 2, HEIGHT // 2)
+
+            # Calculate angle between holder and target
+            angle = -math.degrees(math.atan2(self.offset.y, self.offset.x))
+            self.angle = angle
+
+        # FLip sprite image if necessary
+        if self.angle < -90 or self.angle > 90:
+            self.flipped = True
+            self.image_orig = self.flipped_img
+        elif -90 < self.angle < 90: 
+            self.flipped = False
+            self.image_orig = self.img_overlay
 
         pg.draw.line(self.game.screen, GREEN, (WIDTH//2, HEIGHT//2), target, 2)
         pg.display.flip()
-
-        # Calculate angle between holder and target
-        angle = -math.degrees(math.atan2(self.offset.y, self.offset.x))
-        self.angle = angle
-
-        # FLip sprite image if necessary
-        if target[0] < WIDTH // 2 and not self.flipped:
-            self.flipped = True
-            self.image_orig = pg.transform.flip(self.image_orig, False, True)
-        elif target[0] > WIDTH // 2 and self.flipped: 
-            self.flipped = False
-            self.image_orig = pg.transform.flip(self.image_orig, False, True)
 
         self.image, self.rect = rotate_img_on_pivot(self.image_orig, self.angle, Vector2(self.pivot), Vector2(self.pos))
     
@@ -478,7 +493,16 @@ class Grenade(pg.sprite.Sprite):
             self.pivot = Vector2(self.holder.rect.center)
             self.pos = self.pivot + (20, 0)
             self.x, self.y = self.pos
-            self.rotate(Vector2(pg.mouse.get_pos()))
+
+            if self.target == 'Idle':
+                self.rotate('Idle')
+            else:
+                self.rotate(Vector2(pg.mouse.get_pos()))
+
+            if self.target == 'Idle' and self.shoot_b:
+                print('Player 2 shoot')
+                self.shoot(ORANGE)
+                self.shoot_b = False
     
     def shoot(self, color):
         if not self.detonating: self.detonating = True

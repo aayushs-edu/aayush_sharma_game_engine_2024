@@ -90,7 +90,7 @@ class Player(pg.sprite.Sprite):
             'y': self.y,
             'hitpoints': self.hitpoints,
             'moneybag': self.moneybag,
-            'powerups': self.powerups,
+            'powerups': [p.__class__.__name__ for p in self.powerups],
             'powered_up': self.powered_up,
             'weapon' : self.activeWeapon.get_data(),
             # 'loadout': self.loadout,
@@ -106,7 +106,10 @@ class Player(pg.sprite.Sprite):
         self.y = data.get('y')
         self.hitpoints = data.get('hitpoints')
         self.moneybag = data.get('moneybag')
-        self.powerups = data.get('powerups')
+        for p in data.get('powerups'):
+            if p == 'Speed': self.powerups.append(Speed(self.game, self.x, self.y, 0))
+            elif p == 'Slowmo': self.powerups.append(Slowmo(self.game, self.x, self.y, 0))
+            elif p == 'Health': self.powerups.append(Health(self.game, self.x, self.y, 0))
         self.powered_up = data.get('powered_up')
         self.activeWeapon.load_data(data.get('weapon'))
         # self.loadout = data.get('loadout')
@@ -172,7 +175,7 @@ class Player(pg.sprite.Sprite):
                     p.disable()
                     self.powerups.remove(p)
         else:
-            self.image.fill(GREEN)
+            self.image.fill(self.color)
             self.powered_up = False
 
         # Handle dashing
