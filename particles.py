@@ -16,19 +16,37 @@ class Particle(Sprite):
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
 
+        self.color = color
+
+        self.rotate = bool(rotation)
+        self.rot = rotation
+
         # Generating random particle dimensions and color
         if randSize:
             dim = rand.random() * maxSize
         else:
             dim = maxSize
-        self.image = pg.transform.scale(pg.image.load('./assets/particle.png'), (dim, dim))
-        self.new_image = self.image.copy()
+        
+        if not self.rotate:
+            self.image = pg.transform.scale(pg.image.load('./assets/particle.png'), (dim, dim))
+            self.image.fill(color)
+        else:
+            if color == RED:
+                self.image = pg.transform.scale(pg.image.load('./assets/red.png'), (dim, dim))
+            elif color == ORANGE:
+                self.image = pg.transform.scale(pg.image.load('./assets/orange.png'), (dim, dim))
+            elif color == YELLOW:
+                self.image = pg.transform.scale(pg.image.load('./assets/yellow.png'), (dim, dim))
+            else:
+                self.image = pg.transform.scale(pg.image.load('./assets/particle.png'), (dim, dim))
+            self.image = pg.transform.rotate(self.image, self.rot)
+
         self.fade = fade
         self.decay = decay
         self.x = x
         self.y = y
         self.rect = self.image.get_rect()
-        self.image.fill(color)
+        
 
         # Setting particle target position
         self.target = Vector2(self.x, self.y) + Vector2(rand.random()*maxDist*10, 0).rotate(rand.randint(-maxAngle, maxAngle))
@@ -42,8 +60,7 @@ class Particle(Sprite):
         self.norm_speed = 1
         self.speed = self.norm_speed
 
-        self.rotate = bool(rotation)
-        self.rot = rotation
+        
 
     # Update method
     def update(self):
@@ -63,14 +80,20 @@ class Particle(Sprite):
             self.rect.x = self.x
             self.rect.y = self.y
 
+            self.new_image = self.image.copy()
+
             # Scale down particle size over time
             if self.decay:
-                self.image=pg.transform.scale(self.image, (max(0, self.image.get_width()-self.dur/(50 + 10*self.game.slowmo)), 
-                                                    max(0, self.image.get_height()-self.dur/(50 + 10*self.game.slowmo))))
+                self.new_image=pg.transform.scale(self.new_image, (max(0, self.new_image.get_width()-self.dur/(50 + 10*self.game.slowmo)), 
+                                                    max(0, self.new_image.get_height()-self.dur/(50 + 10*self.game.slowmo))))
 
             # if self.rotate:
-            #     self.image = pg.transform.rotate(self.new_image, self.rot)
-            #     self.rect = self.image.get_rect(center=self.rect.center)
+            #     self.new_image = pg.transform.rotate(self.new_image, self.rot)
+            #     self.rect = self.new_image.get_rect(center=self.rect.center)
+
+            self.image = self.new_image
+
+            # self.image.fill(self.color)
 
             
         else:
